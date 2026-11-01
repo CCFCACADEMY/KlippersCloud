@@ -149,7 +149,29 @@ guest bookings, time off, dashboards & reports, suspension, queue, AI, WhatsApp,
 
 ## Deployment
 
-### Option A — Docker Compose (single VM)
+### Option A — One-click deploy to Render (recommended for a demo)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/CCFCACADEMY/KlippersCloud)
+
+[`render.yaml`](render.yaml) creates a **PostgreSQL database** plus **one web service** built from the root
+[`Dockerfile`](Dockerfile). That service runs the API *and* serves the React app, so the whole app lives on a
+single HTTPS URL (first-party cookies, WebSockets and no CORS setup).
+
+1. Sign in at [render.com](https://render.com) with GitHub and give Render access to this repository
+   (it's private, so Render needs the GitHub permission).
+2. Click the button above, or **New → Blueprint** and pick the repo.
+3. Approve. Render generates the JWT secrets, wires `DATABASE_URL`, builds the image (~5 min) and starts it.
+4. Open `https://klippers-XXXX.onrender.com`. The first boot sees an empty database and loads the demo
+   data (`SEED_ON_EMPTY=true`), so the demo accounts above work immediately.
+
+Free-tier caveats: the web service sleeps after ~15 min idle (the next visit takes ~1 min to wake), and free
+Postgres is deleted after 30 days. Pick paid plans in `render.yaml` for anything real, and set
+`SEED_ON_EMPTY=false` before onboarding real customers.
+
+The same root `Dockerfile` runs anywhere a single container runs (Railway, Fly.io, Cloud Run, ECS). Give it
+`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, and `CLIENT_URL` set to its public URL.
+
+### Option B — Docker Compose (single VM)
 ```bash
 cp server/.env.example server/.env
 # edit server/.env: set NODE_ENV=production, strong JWT_ACCESS_SECRET / JWT_REFRESH_SECRET,
@@ -170,7 +192,7 @@ connection errors, build with `--network host --build-arg HTTPS_PROXY=…` and m
 in the build stage (e.g. `COPY corp-ca.crt /tmp/ca.crt` + `ENV NODE_EXTRA_CA_CERTS=/tmp/ca.crt`).
 Don't disable TLS verification.
 
-### Option B — Managed services
+### Option C — Separate managed services
 | Piece | Suggested host | Notes |
 |---|---|---|
 | PostgreSQL | Neon, Supabase, Render, RDS | Enable `btree_gist` (allowed on all of these). Set `DATABASE_SSL=true`. |

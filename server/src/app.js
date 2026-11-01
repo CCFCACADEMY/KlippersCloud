@@ -3,6 +3,8 @@
  * use it with supertest).
  */
 import express from 'express';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
@@ -27,7 +29,25 @@ export function createApp() {
   const app = express();
   app.set('trust proxy', 1); // behind a load balancer / Render / Railway proxy
 
-  app.use(helmet());
+  // Content Security Policy that allows exactly what the SPA needs: Google Fonts,
+  // Google Sign-In, Stripe, remote images (barber photos) and same-origin websockets.
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://accounts.google.com', 'https://js.stripe.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://accounts.google.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+        connectSrc: ["'self'", 'wss:', 'https://accounts.google.com', 'https://api.stripe.com'],
+        frameSrc: ['https://accounts.google.com', 'https://js.stripe.com'],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }));
   app.use(cors({ origin: env.clientUrl.split(','), credentials: true }));
   app.use(compression());
   if (!env.isTest) app.use(morgan(env.isProd ? 'combined' : 'dev'));
@@ -55,6 +75,17 @@ export function createApp() {
   app.use('/api/reports', reportRoutes);
   app.use('/api', extrasRoutes);                   // /gallery, /memberships, /gift-cards, /queue, /ai
   app.use('/api/webhooks', whatsappRoutes);
+
+  // Single-service mode: serve the built React app and fall back to index.html for client routes
+  const staticDir = env.staticDir && path.resolve(env.staticDir);
+  if (staticDir && existsSync(path.join(staticDir, 'index.html'))) {
+    app.use('/assets', express.static(path.join(staticDir, 'assets'), { immutable: true, maxAge: '1y' }));
+    app.use(express.static(staticDir, { index: false, maxAge: '1h' }));
+    app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.sendFile(path.join(staticDir, 'index.html'));
+    });
+  }
 
   app.use(notFound);
   app.use(errorHandler);

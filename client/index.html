@@ -10,10 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
     <title>Klippers — Barber Shop & Appointments</title>
-    <script>
-      // Apply saved theme before paint to avoid a flash
-      try { const t = localStorage.getItem('klippers-theme'); if (t === 'light') document.documentElement.classList.remove('dark'); } catch {}
-    </script>
+    <!-- Applies the saved theme before first paint (external file so CSP can forbid inline scripts) -->
+    <script src="/theme-init.js"></script>
   </head>
   <body class="bg-cream text-ink-900 dark:bg-ink-950 dark:text-white antialiased">
     <div id="root"></div>

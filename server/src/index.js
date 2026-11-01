@@ -12,6 +12,13 @@ const server = http.createServer(app);
 initSocket(server);
 
 await migrate(); // idempotent — keeps schema current on every deploy
+if (env.seedOnEmpty) {
+  const { rows: [{ n }] } = await pool.query('SELECT count(*)::int AS n FROM users');
+  if (n === 0) {
+    const { seed } = await import('./db/seed.js');
+    console.log('🌱 Empty database — loading demo data…', await seed());
+  }
+}
 if (env.enableJobs) startJobs();
 
 server.listen(env.port, () => console.log(`💈 Klippers API listening on :${env.port} (${env.nodeEnv})`));

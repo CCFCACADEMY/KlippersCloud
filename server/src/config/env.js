@@ -19,7 +19,12 @@ export const env = {
   port: Number(process.env.PORT || 4000),
   databaseUrl: required('DATABASE_URL', isProd ? undefined : 'postgres://klippers:klippers@localhost:5432/klippers'),
   databaseSsl: process.env.DATABASE_SSL === 'true',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  // Public URL of the web app (CORS, email links, QR codes). Render sets RENDER_EXTERNAL_URL automatically.
+  clientUrl: process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
+  // When set (single-service deploys), Express also serves the built SPA from this folder.
+  staticDir: process.env.STATIC_DIR || '',
+  // Load demo data on first boot if the database is empty (handy for demo deploys).
+  seedOnEmpty: process.env.SEED_ON_EMPTY === 'true',
   // In production these MUST be set to long random strings.
   jwtAccessSecret: required('JWT_ACCESS_SECRET', isProd ? undefined : 'dev-access-secret-change-me'),
   jwtRefreshSecret: required('JWT_REFRESH_SECRET', isProd ? undefined : 'dev-refresh-secret-change-me'),
