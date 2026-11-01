@@ -1,0 +1,33 @@
+# One-command local/prod-like stack:  docker compose up --build
+# Then seed demo data:               docker compose exec api node src/db/seed.js
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: klippers
+      POSTGRES_PASSWORD: klippers
+      POSTGRES_DB: klippers
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klippers"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./server
+    env_file: ./server/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://klippers:klippers@db:5432/klippers
+      CLIENT_URL: http://localhost:8080
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["4000:4000"]
+
+  web:
+    build: ./client
+    depends_on: [api]
+    ports: ["8080:80"]
+
+volumes:
+  pgdata:

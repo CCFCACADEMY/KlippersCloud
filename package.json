@@ -1,0 +1,14 @@
+{
+  "name": "klippers",
+  "private": true,
+  "description": "Klippers — full-stack barber shop & appointment management",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev:api": "npm --prefix server run dev",
+    "dev:web": "npm --prefix client run dev",
+    "migrate": "npm --prefix server run migrate",
+    "seed": "npm --prefix server run seed",
+    "test": "npm --prefix server test",
+    "build": "npm --prefix client run build"
+  }
+}
