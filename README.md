@@ -164,6 +164,14 @@ single HTTPS URL (first-party cookies, WebSockets and no CORS setup).
 4. Open `https://klippers-XXXX.onrender.com`. The first boot sees an empty database and loads the demo
    data (`SEED_ON_EMPTY=true`), so the demo accounts above work immediately.
 
+Verify any deployment from your own machine (Node 18+, no install needed):
+```bash
+npm run smoke -- https://klippers.onrender.com
+```
+It waits for a sleeping instance to wake, then checks health, the web app, security headers, the catalogue,
+every role's login and dashboard, session refresh, access control, availability, a guest booking with
+double-booking protection (cancelled afterwards), reports and the real-time socket.
+
 Free-tier caveats: the web service sleeps after ~15 min idle (the next visit takes ~1 min to wake), and free
 Postgres is deleted after 30 days. Pick paid plans in `render.yaml` for anything real, and set
 `SEED_ON_EMPTY=false` before onboarding real customers.

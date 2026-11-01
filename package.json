@@ -9,6 +9,7 @@
     "migrate": "npm --prefix server run migrate",
     "seed": "npm --prefix server run seed",
     "test": "npm --prefix server test",
-    "build": "npm --prefix client run build"
+    "build": "npm --prefix client run build",
+    "smoke": "node scripts/smoke-test.mjs"
   }
 }
