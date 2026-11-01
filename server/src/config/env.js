@@ -6,7 +6,9 @@ import 'dotenv/config';
 
 const required = (name, fallback) => {
   const v = process.env[name] ?? fallback;
-  if (v === undefined || v === '') throw new Error(`Missing required env var: ${name}`);
+  if (v === undefined || v === '') {
+    throw new Error(`Missing required env var: ${name}. On Render, deploy with the Blueprint (render.yaml) so it is set automatically, or add it under the service's Environment tab.`);
+  }
   return v;
 };
 

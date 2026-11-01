@@ -59,7 +59,10 @@ export function createApp() {
   app.use(express.urlencoded({ extended: false, limit: '100kb' })); // Twilio webhooks
   app.use(cookieParser());
 
+  // index.js sets app.locals.ready = false while it migrates/seeds; tests use the app directly (ready).
+  app.locals.ready = true;
   app.get('/api/health', async (_req, res) => {
+    if (!app.locals.ready) return res.status(503).json({ status: 'starting' });
     await pool.query('SELECT 1');
     res.json({ status: 'ok', time: new Date().toISOString() });
   });

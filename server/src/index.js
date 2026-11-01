@@ -11,17 +11,42 @@ const app = createApp();
 const server = http.createServer(app);
 initSocket(server);
 
-await migrate(); // idempotent — keeps schema current on every deploy
-if (env.seedOnEmpty) {
-  const { rows: [{ n }] } = await pool.query('SELECT count(*)::int AS n FROM users');
-  if (n === 0) {
-    const { seed } = await import('./db/seed.js');
-    console.log('🌱 Empty database — loading demo data…', await seed());
+// Open the port immediately so hosts like Render detect the service, and report
+// "starting" (503) on /api/health until migrations and optional seeding finish.
+app.locals.ready = false;
+server.listen(env.port, () => console.log(`💈 Klippers API listening on :${env.port} (${env.nodeEnv})`));
+
+/** Retry the first DB connection — managed databases can still be provisioning on first deploy. */
+async function waitForDatabase(attempts = 24, delayMs = 5000) {
+  for (let i = 1; i <= attempts; i++) {
+    try { await pool.query('SELECT 1'); return; } catch (e) {
+      console.log(`⏳ Waiting for database (${i}/${attempts}): ${e.message}`);
+      if (i === attempts) throw e;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
   }
 }
-if (env.enableJobs) startJobs();
 
-server.listen(env.port, () => console.log(`💈 Klippers API listening on :${env.port} (${env.nodeEnv})`));
+try {
+  await waitForDatabase();
+  await migrate(); // idempotent — keeps schema current on every deploy
+  if (env.seedOnEmpty) {
+    const { rows: [{ n }] } = await pool.query('SELECT count(*)::int AS n FROM users');
+    if (n === 0) {
+      const { seed } = await import('./db/seed.js');
+      console.log('🌱 Empty database — loading demo data…', await seed());
+    }
+  }
+  if (env.enableJobs) startJobs();
+  app.locals.ready = true;
+  console.log('✅ Ready');
+} catch (err) {
+  console.error('✖ Startup failed:', err.message);
+  if (/btree_gist|permission denied/i.test(err.message)) {
+    console.error('  → The database user may not be allowed to create the btree_gist extension. Run once as an admin: CREATE EXTENSION btree_gist;');
+  }
+  process.exit(1);
+}
 
 // Graceful shutdown for container orchestrators
 const shutdown = (sig) => {
