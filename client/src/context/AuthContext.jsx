@@ -9,6 +9,15 @@ import { getSocket, resetSocketAuth } from '../lib/socket';
 
 const AuthContext = createContext(null);
 
+// Non-sensitive hint that a refresh cookie probably exists. It lets anonymous
+// visitors skip the silent /auth/refresh call (which would just 401).
+const SESSION_HINT = 'klippers-has-session';
+const hint = {
+  set: () => { try { localStorage.setItem(SESSION_HINT, '1'); } catch { /* storage disabled */ } },
+  clear: () => { try { localStorage.removeItem(SESSION_HINT); } catch { /* storage disabled */ } },
+  exists: () => { try { return localStorage.getItem(SESSION_HINT) === '1'; } catch { return true; } },
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
@@ -16,12 +25,14 @@ export function AuthProvider({ children }) {
   const applySession = useCallback(({ accessToken, user: u }) => {
     setAccessToken(accessToken);
     setUser(u);
+    hint.set();
     resetSocketAuth();
   }, []);
 
   useEffect(() => {
-    setLogoutHandler(() => setUser(null));
-    refreshSession().then(applySession).catch(() => {}).finally(() => setReady(true));
+    setLogoutHandler(() => { hint.clear(); setUser(null); });
+    if (!hint.exists()) { setReady(true); return; }
+    refreshSession().then(applySession).catch(() => hint.clear()).finally(() => setReady(true));
   }, [applySession]);
 
   // Real-time "push" notifications → toast + native browser notification
@@ -59,6 +70,7 @@ export function AuthProvider({ children }) {
     },
     async logout() {
       await api.post('/auth/logout').catch(() => {});
+      hint.clear();
       setAccessToken(null);
       setUser(null);
       resetSocketAuth();

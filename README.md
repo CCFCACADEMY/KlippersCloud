@@ -161,6 +161,15 @@ docker compose exec api node src/db/seed.js     # optional demo data
 Put a TLS-terminating proxy (Caddy, Traefik, a cloud load balancer) in front of port 8080. In production
 the refresh cookie is `Secure`, so the site must be served over HTTPS.
 
+**Verified:** the Compose stack builds and runs end to end: migrations on boot, seeding, nginx serving the
+production bundle, `/api` and WebSocket proxying, SPA routing, gzip, immutable asset caching, security headers,
+login with the `Secure` refresh cookie, and session restore after reload.
+
+**Building behind a TLS-intercepting corporate proxy?** If `npm ci` fails inside `docker build` with SSL or
+connection errors, build with `--network host --build-arg HTTPS_PROXY=…` and make the proxy's CA available
+in the build stage (e.g. `COPY corp-ca.crt /tmp/ca.crt` + `ENV NODE_EXTRA_CA_CERTS=/tmp/ca.crt`).
+Don't disable TLS verification.
+
 ### Option B — Managed services
 | Piece | Suggested host | Notes |
 |---|---|---|
