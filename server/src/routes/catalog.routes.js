@@ -23,7 +23,8 @@ router.get('/services', validate({
 }), asyncHandler(async (req, res) => {
   const includeInactive = req.query.all === 'true';
   const rows = await many(
-    `SELECT s.*, (SELECT count(*)::int FROM barber_services bs WHERE bs.service_id = s.id) AS barber_count
+    `SELECT s.*, (SELECT count(*)::int FROM barber_services bs JOIN barbers b ON b.id = bs.barber_id JOIN users u ON u.id = b.user_id
+               WHERE bs.service_id = s.id AND b.is_approved AND u.is_active) AS barber_count
        FROM services s
       WHERE ($1::text IS NULL OR s.category = $1) AND ($2 OR s.is_active)
       ORDER BY s.sort_order, s.name`,
@@ -82,7 +83,7 @@ router.delete('/services/:id', authenticate, authorize('admin'), validate({ para
 // ------------------------------------------------------------ locations
 router.get('/locations', asyncHandler(async (_req, res) => {
   res.json({ locations: await many(
-    `SELECT l.*, (SELECT count(*)::int FROM barbers b WHERE b.location_id = l.id AND b.is_approved) AS barber_count
+    `SELECT l.*, (SELECT count(*)::int FROM barbers b JOIN users u ON u.id = b.user_id WHERE b.location_id = l.id AND b.is_approved AND u.is_active) AS barber_count
        FROM locations l WHERE l.is_active ORDER BY l.name`) });
 }));
 

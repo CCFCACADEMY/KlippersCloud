@@ -28,7 +28,7 @@ const MENUS = {
   ],
   admin: [
     ['/admin', 'Dashboard', LayoutDashboard], ['/admin/appointments', 'Appointments', CalendarDays],
-    ['/admin/customers', 'Customers', Users], ['/admin/barbers', 'Barbers', Scissors],
+    ['/admin/customers', 'Users', Users], ['/admin/barbers', 'Barbers', Scissors],
     ['/admin/services', 'Services', Store], ['/admin/payments', 'Payments', CreditCard],
     ['/admin/reviews', 'Reviews', Star], ['/admin/coupons', 'Coupons', Ticket],
     ['/admin/queue', 'Queue', ListOrdered], ['/admin/reports', 'Reports', BarChart3], ['/admin/settings', 'Settings', Settings],

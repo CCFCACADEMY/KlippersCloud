@@ -10,14 +10,15 @@ import { Badge, Button, Card, EmptyState, PageHeader, PageLoader, Stars, Tabs } 
 
 export default function StaffReviews() {
   const { user } = useAuth();
-  const { data, reload } = useFetch('/me/reviews');
+  const [limit, setLimit] = useState(100);
+  const { data, reload, loading } = useFetch('/me/reviews', { params: { limit } });
   const [filter, setFilter] = useState('all');
   if (!data) return <PageLoader />;
   const list = data.reviews.filter((r) => filter === 'all' || (filter === 'low' ? r.rating <= 3 : filter === 'hidden' ? !r.is_visible : !r.barber_reply));
   const act = async (fn) => { try { await fn(); reload(); } catch (e) { toast.error(errMsg(e)); } };
   return (
     <>
-      <PageHeader title="Reviews" subtitle={`${data.reviews.length} reviews`} />
+      <PageHeader title="Reviews" subtitle={`${data.total ?? data.reviews.length} reviews${data.reviews.length < (data.total ?? 0) ? ` · showing latest ${data.reviews.length}` : ''}`} />
       <Tabs value={filter} onChange={setFilter} tabs={[{ value: 'all', label: 'All' }, { value: 'unanswered', label: 'Unanswered' }, { value: 'low', label: '≤ 3 stars' }, ...(user.role === 'admin' ? [{ value: 'hidden', label: 'Hidden' }] : [])]} />
       <div className="mt-4 space-y-3">
         {list.length === 0 && <EmptyState title="No reviews" />}
@@ -38,6 +39,9 @@ export default function StaffReviews() {
             </div>
           </Card>
         ))}
+        {data.reviews.length < (data.total ?? 0) && (
+          <div className="text-center"><Button variant="secondary" loading={loading} onClick={() => setLimit((l) => l + 200)}>Load more reviews</Button></div>
+        )}
       </div>
     </>
   );

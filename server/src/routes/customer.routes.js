@@ -64,11 +64,15 @@ router.post('/reviews', authenticate, authorize('customer'), validate({
 
 /** Review management (admin: all; barber: own). */
 router.get('/reviews', authenticate, authorize('admin', 'barber'), asyncHandler(async (req, res) => {
-  res.json({ reviews: await many(
-    `SELECT r.*, u.name AS customer_name, bu.name AS barber_name
-       FROM reviews r JOIN users u ON u.id = r.customer_id JOIN barbers b ON b.id = r.barber_id JOIN users bu ON bu.id = b.user_id
-      WHERE ($1::uuid IS NULL OR r.barber_id = $1) ORDER BY r.created_at DESC LIMIT 200`,
-    [req.user.role === 'barber' ? req.user.barber_id : null]) });
+  const scope = req.user.role === 'barber' ? req.user.barber_id : null;
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 100, 1), 1000);
+  const [reviews, { n }] = await Promise.all([
+    many(`SELECT r.*, u.name AS customer_name, bu.name AS barber_name
+            FROM reviews r JOIN users u ON u.id = r.customer_id JOIN barbers b ON b.id = r.barber_id JOIN users bu ON bu.id = b.user_id
+           WHERE ($1::uuid IS NULL OR r.barber_id = $1) ORDER BY r.created_at DESC LIMIT $2`, [scope, limit]),
+    one('SELECT count(*)::int AS n FROM reviews WHERE ($1::uuid IS NULL OR barber_id = $1)', [scope]),
+  ]);
+  res.json({ reviews, total: n });
 }));
 
 router.patch('/reviews/:id/visibility', authenticate, authorize('admin'), validate({ params: idParam, body: z.object({ is_visible: z.boolean() }) }),

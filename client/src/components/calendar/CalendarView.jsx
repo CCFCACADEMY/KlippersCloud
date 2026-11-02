@@ -126,19 +126,20 @@ export default function CalendarView({ barberId, role = 'barber', defaultView = 
                 <div key={d.toISOString()} className="relative border-l border-black/5 dark:border-white/5">
                   {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => <div key={i} className="border-b border-black/5 dark:border-white/5" style={{ height: HOUR_PX }} />)}
                   {isToday(d) && <NowLine />}
-                  {events.filter((e) => isSameDay(inTz(e.start_at, e.timezone || undefined), d)).map((e) => {
+                  {(() => { const dayEvents = events.filter((e) => isSameDay(inTz(e.start_at, e.timezone || undefined), d)); const lay = layoutDay(dayEvents); return dayEvents.map((e) => {
                     const s = inTz(e.start_at, e.timezone || undefined);
                     const top = ((s.getHours() - START_HOUR) * 60 + s.getMinutes()) * (HOUR_PX / 60);
                     const height = Math.max(22, differenceInMinutes(new Date(e.end_at), new Date(e.start_at)) * (HOUR_PX / 60) - 2);
                     return (
-                      <button key={e.id} onClick={() => setSelected(e)} style={{ top, height }}
-                        className={cn('absolute left-1 right-1 overflow-hidden rounded-lg border-l-4 px-2 py-1 text-left text-xs shadow-sm transition hover:z-10 hover:shadow-md', EVENT_COLORS[e.status])}>
+                      <button key={e.id} onClick={() => setSelected(e)} title={`${e.customer_name} · ${fmtTime(e.start_at, e.timezone || undefined)} · ${e.services.map((x) => x.name).join(', ')}`}
+                        style={{ top, height, left: `calc(${(lay[e.id].lane / lay[e.id].lanes) * 100}% + 2px)`, width: `calc(${100 / lay[e.id].lanes}% - 4px)` }}
+                        className={cn('absolute overflow-hidden rounded-lg border-l-4 px-2 py-1 text-left text-xs shadow-sm transition hover:z-10 hover:shadow-md', EVENT_COLORS[e.status])}>
                         <p className="truncate font-semibold">{e.customer_name}</p>
                         <p className="truncate muted">{fmtTime(e.start_at, e.timezone || undefined)} · {e.services.map((x) => x.name).join(', ')}</p>
                         {!barberId && <p className="truncate text-brass-600 dark:text-brass-300">{e.barber_name}</p>}
                       </button>
                     );
-                  })}
+                  })})()}
                 </div>
               ))}
             </div>
@@ -155,6 +156,27 @@ export default function CalendarView({ barberId, role = 'barber', defaultView = 
       </Modal>
     </Card>
   );
+}
+
+/**
+ * Place overlapping events side by side: greedy lane assignment within each
+ * cluster of overlapping events; every event in a cluster shares its lane count.
+ */
+function layoutDay(events) {
+  const sorted = [...events].sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+  const out = {};
+  let cluster = []; let clusterEnd = 0; let lanesEnd = [];
+  const flush = () => { const n = lanesEnd.length || 1; cluster.forEach((id) => { out[id].lanes = n; }); cluster = []; lanesEnd = []; };
+  for (const e of sorted) {
+    const s = new Date(e.start_at).getTime(); const en = new Date(e.end_at).getTime();
+    if (cluster.length && s >= clusterEnd) flush();
+    let lane = lanesEnd.findIndex((end) => end <= s);
+    if (lane === -1) { lane = lanesEnd.length; lanesEnd.push(en); } else lanesEnd[lane] = en;
+    out[e.id] = { lane, lanes: 1 };
+    cluster.push(e.id); clusterEnd = Math.max(clusterEnd, en);
+  }
+  flush();
+  return out;
 }
 
 function NowLine() {

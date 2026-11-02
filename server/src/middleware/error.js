@@ -9,7 +9,13 @@ function fromPg(err) {
     case '23P01': // exclusion_violation (appointments_no_overlap)
       return ApiError.conflict('That time slot was just booked. Please choose another time.');
     case '23505': // unique_violation
-      return ApiError.conflict(err.constraint === 'users_email_lower_idx' ? 'Email is already registered' : 'Duplicate value');
+      return ApiError.conflict({
+        users_email_lower_idx: 'Email is already registered',
+        coupons_code_key: 'A coupon with this code already exists',
+        services_slug_key: 'A service with this name already exists',
+        reviews_appointment_id_key: 'This appointment has already been reviewed',
+        membership_plans_name_key: 'A plan with this name already exists',
+      }[err.constraint] || 'That already exists');
     case '23503': return ApiError.badRequest('Referenced record does not exist');
     case '23514': return ApiError.badRequest('Value violates a data rule');
     case '22P02': return ApiError.badRequest('Invalid identifier format');

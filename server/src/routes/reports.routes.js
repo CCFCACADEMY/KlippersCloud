@@ -68,6 +68,7 @@ router.get('/appointments', validate({ query: rangeQuery }), asyncHandler(async 
 
 /** Customer retention: repeat rate, cohort return within 60 days, churn risk. */
 router.get('/retention', validate({ query: rangeQuery }), asyncHandler(async (req, res) => {
+  const [from, to] = req.query.from || req.query.to ? range(req.query) : ['1900-01-01', '2999-12-31'];
   const rows = await many(
     `WITH visits AS (
        SELECT customer_id, start_at, row_number() OVER (PARTITION BY customer_id ORDER BY start_at) AS n,
@@ -78,7 +79,8 @@ router.get('/retention', validate({ query: rangeQuery }), asyncHandler(async (re
             count(*) FILTER (WHERE next_visit IS NOT NULL)::int AS returned,
             count(*) FILTER (WHERE next_visit <= cohort + interval '3 months')::int AS returned_within_90d,
             round(100.0 * count(*) FILTER (WHERE next_visit IS NOT NULL) / count(*), 1) AS retention_pct
-       FROM firsts GROUP BY cohort ORDER BY cohort`);
+       FROM firsts WHERE cohort::date BETWEEN date_trunc('month', $1::date) AND $2::date
+      GROUP BY cohort ORDER BY cohort`, [from, to]);
   const [summary] = await many(
     `SELECT count(*)::int AS customers,
             count(*) FILTER (WHERE visits > 1)::int AS repeat_customers,

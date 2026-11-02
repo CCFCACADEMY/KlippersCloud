@@ -26,8 +26,8 @@ router.get('/dashboard', asyncHandler(async (_req, res) => {
           (SELECT count(*)::int FROM appointments WHERE start_at::date = current_date AND status NOT IN ('cancelled','rejected')) AS today_bookings,
           (SELECT count(*)::int FROM appointments WHERE status = 'pending' AND start_at > now()) AS pending_requests,
           (SELECT COALESCE(sum(amount - refunded_amount),0) FROM payments WHERE status IN ('paid','partially_refunded')) AS total_revenue,
-          (SELECT COALESCE(sum(amount - refunded_amount),0) FROM payments WHERE status IN ('paid','partially_refunded') AND paid_at >= now() - interval '30 days') AS revenue_30d,
-          (SELECT COALESCE(sum(amount - refunded_amount),0) FROM payments WHERE status IN ('paid','partially_refunded') AND paid_at >= now() - interval '60 days' AND paid_at < now() - interval '30 days') AS revenue_prev_30d,
+          (SELECT COALESCE(sum(amount - refunded_amount),0) FROM payments WHERE status IN ('paid','partially_refunded') AND paid_at::date >= current_date - 29) AS revenue_30d,
+          (SELECT COALESCE(sum(amount - refunded_amount),0) FROM payments WHERE status IN ('paid','partially_refunded') AND paid_at::date >= current_date - 59 AND paid_at::date < current_date - 29) AS revenue_prev_30d,
           (SELECT count(DISTINCT customer_id)::int FROM appointments WHERE start_at > now() - interval '90 days' AND customer_id IS NOT NULL) AS active_customers,
           (SELECT count(*)::int FROM users WHERE role = 'customer') AS total_customers,
           (SELECT count(*)::int FROM barbers WHERE is_approved) AS active_barbers,
@@ -96,7 +96,7 @@ router.patch('/users/:id/role', validate({ params: idParam, body: z.object({ rol
 }));
 
 /** Award or deduct loyalty points manually. */
-router.post('/users/:id/points', validate({ params: idParam, body: z.object({ points: z.number().int(), reason: z.string().min(2).max(200) }) }),
+router.post('/users/:id/points', validate({ params: idParam, body: z.object({ points: z.number().int('Points must be a whole number').refine((n) => n !== 0, 'Points cannot be 0'), reason: z.string().min(2).max(200) }) }),
   asyncHandler(async (req, res) => {
     await withTransaction(async (c) => {
       await c.query('INSERT INTO loyalty_transactions (user_id, points, reason) VALUES ($1,$2,$3)', [req.params.id, req.body.points, req.body.reason]);

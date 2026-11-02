@@ -245,7 +245,7 @@ router.get('/', optionalAuth, validate({
 
 router.get('/:id', optionalAuth, validate({ params: idParam }), asyncHandler(async (req, res) => {
   const barber = await one(`${BARBER_SELECT} WHERE b.id = $1`, [req.params.id]);
-  if (!barber || (!barber.is_approved && req.user?.role !== 'admin')) throw ApiError.notFound('Barber not found');
+  if (!barber || ((!barber.is_approved || !barber.is_active) && req.user?.role !== 'admin')) throw ApiError.notFound('Barber not found');
   delete barber.email; delete barber.phone;
   const [services, hours, reviews, gallery, fav, completed] = await Promise.all([
     many(`SELECT s.id, s.name, s.category, s.description, s.image_url,

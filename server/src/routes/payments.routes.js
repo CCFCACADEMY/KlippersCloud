@@ -101,7 +101,7 @@ td:last-child,th:last-child{text-align:right}.total{font-size:20px;font-weight:7
 ${p.start_at ? `<p><b>Appointment:</b> ${dayjs(p.start_at).tz(p.timezone || s.default_timezone).format('ddd, MMM D YYYY h:mm A')} with ${esc(p.barber_name)}</p>` : ''}
 <table><tr><th>Item</th><th>Amount</th></tr>${items.map((i) => `<tr><td>${esc(i.name)}</td><td>${$(i.price)}</td></tr>`).join('')}
 ${p.discount ? `<tr><td>Discounts</td><td>−${$(p.discount)}</td></tr>` : ''}
-<tr><td>GST (${s.tax_rate}%)</td><td>${$(p.tax)}</td></tr>
+<tr><td>GST (${p.subtotal ? Math.round((p.tax / Math.max(p.subtotal - (p.discount || 0), 0.01)) * 10000) / 100 : s.tax_rate}%)</td><td>${$(p.tax)}</td></tr>
 <tr><td class="total">Total</td><td class="total">${$(p.amount)}</td></tr>
 ${p.refunded_amount ? `<tr><td>Refunded</td><td>−${$(p.refunded_amount)}</td></tr>` : ''}</table>
 <p class="muted">Paid by ${esc(p.method.replace('_', ' '))}. Thank you for choosing ${esc(s.business_name)}!</p>
