@@ -41,7 +41,7 @@ export default function Queue() {
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div><h1 className="text-4xl font-bold">Live walk-in queue</h1><p className="mt-2 muted">No appointment? Join the line from your phone and we'll text you when you're up.</p></div>
-        <Select value={locationId} onChange={(e) => setLocationId(e.target.value)} style={{ maxWidth: 260 }}>{loc?.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
+        <Select aria-label="Choose location" value={locationId} onChange={(e) => setLocationId(e.target.value)} style={{ maxWidth: 260 }}>{loc?.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
       </div>
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
         <Card className="p-6">

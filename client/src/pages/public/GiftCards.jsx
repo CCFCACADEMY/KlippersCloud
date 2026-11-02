@@ -27,6 +27,7 @@ export default function GiftCards() {
     } catch (err) { toast.error(errMsg(err)); } finally { setBusy(false); }
   };
   const check = async () => {
+    if (!code.trim()) return toast.error('Enter a gift card code to check its balance.');
     try { setBalance((await api.get(`/gift-cards/${code.trim()}/balance`)).data.giftCard); } catch (err) { toast.error(errMsg(err)); setBalance(null); }
   };
 
@@ -47,8 +48,8 @@ export default function GiftCards() {
         <Card className="mt-8 max-w-md p-5">
           <p className="font-semibold">Check a balance</p>
           <div className="mt-3 flex gap-2">
-            <Input placeholder="GIFT-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
-            <Button variant="secondary" onClick={check}><Search className="h-4 w-4" /></Button>
+            <Input aria-label="Gift card code" placeholder="GIFT-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+            <Button variant="secondary" onClick={check} aria-label="Check balance"><Search className="h-4 w-4" /></Button>
           </div>
           {balance && <p className="mt-3 text-sm">Balance: <b>{money(balance.balance)}</b> of {money(balance.initial_amount)} {!balance.is_active && '(inactive)'}</p>}
         </Card>

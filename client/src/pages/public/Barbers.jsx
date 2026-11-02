@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { useFetch } from '../../hooks/useFetch';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { Card, PageLoader, Select, Stars, cn } from '../../components/ui';
+import { Card, EmptyState, PageLoader, Select, Stars, cn } from '../../components/ui';
 
 export default function Barbers() {
   const { user } = useAuth();
@@ -27,11 +27,13 @@ export default function Barbers() {
       <h1 className="text-4xl font-bold">Our barbers</h1>
       <p className="mt-2 muted">Every barber is vetted, reviewed and ready to make you look sharp.</p>
       <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_200px_180px]">
-        <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 muted" /><input className="input pl-9" placeholder="Search by name or specialty (e.g. fades)" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-        <Select value={locationId} onChange={(e) => setLocationId(e.target.value)}><option value="">All locations</option>{loc?.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
-        <Select value={sort} onChange={(e) => setSort(e.target.value)}><option value="rating">Top rated</option><option value="experience">Most experienced</option><option value="name">Name</option></Select>
+        <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 muted" /><input className="input pl-9" aria-label="Search barbers by name or specialty" placeholder="Search by name or specialty (e.g. fades)" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+        <Select aria-label="Filter by location" value={locationId} onChange={(e) => setLocationId(e.target.value)}><option value="">All locations</option>{loc?.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
+        <Select aria-label="Sort barbers" value={sort} onChange={(e) => setSort(e.target.value)}><option value="rating">Top rated</option><option value="experience">Most experienced</option><option value="name">Name</option></Select>
       </div>
-      {!data ? <PageLoader /> : (
+      {!data ? <PageLoader /> : data.barbers.length === 0 ? (
+        <div className="mt-8"><EmptyState title="No barbers found" text="Try a different name, specialty or location." /></div>
+      ) : (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data.barbers.map((b, i) => (
             <motion.div key={b.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>

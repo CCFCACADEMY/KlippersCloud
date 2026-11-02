@@ -4,7 +4,7 @@
  * Works for signed-in customers and guests. Slots refresh in real time when
  * another booking lands on the same barber (Socket.IO "slots:changed").
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { addDays, format, startOfMonth } from 'date-fns';
@@ -53,6 +53,11 @@ export default function Book() {
   const services = svcData?.services || [];
   const selectedServices = services.filter((s) => serviceIds.includes(s.id));
   const go = (n) => setStep([n, n > step ? 1 : -1]);
+  // Refs let the real-time slot refresh see the latest step / selection without re-subscribing
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const startAtRef = useRef(startAt);
+  startAtRef.current = startAt;
 
   // Barbers who offer every selected service
   const [eligible, setEligible] = useState(null);
@@ -61,6 +66,15 @@ export default function Book() {
     Promise.all(serviceIds.map((id) => api.get('/barbers', { params: { serviceId: id } }).then((r) => r.data.barbers.map((b) => b.id))))
       .then((lists) => setEligible(barberData.barbers.filter((b) => lists.every((l) => l.includes(b.id)))));
   }, [serviceIds, barberData]);
+
+  // A barber pre-selected via ?barber= may not offer the chosen services: clear the choice
+  useEffect(() => {
+    if (eligible && barberId && !eligible.some((b) => b.id === barberId)) {
+      const name = barberData?.barbers.find((b) => b.id === barberId)?.name;
+      setBarberId(null); setDate(null); setStartAt(null);
+      if (name) toast(`${name} doesn't offer all the selected services. Please choose another barber.`, { icon: 'ℹ️' });
+    }
+  }, [eligible, barberId, barberData]);
 
   const barber = barberData?.barbers.find((b) => b.id === barberId);
   // Barber-specific price/duration overrides (e.g. senior barbers charge more)
@@ -85,8 +99,15 @@ export default function Book() {
       setSlots(data.slots);
       setSlotReason(data.reason || '');
       setTz(data.timezone);
-      // Drop the selected slot if someone else just booked it
-      setStartAt((cur) => (cur && !data.slots.find((s) => s.start === cur && s.available) ? null : cur));
+      // If someone else just booked the selected slot, clear it and tell the user
+      const cur = startAtRef.current;
+      if (cur && !data.slots.find((s) => s.start === cur && s.available)) {
+        setStartAt(null);
+        if (stepRef.current === 3) {
+          toast.error('Sorry, that time was just booked by someone else. Please pick another time.');
+          setStep([2, -1]);
+        }
+      }
     } catch (e) { toast.error(errMsg(e)); }
   }, [barberId, date, serviceIds]);
 
@@ -114,7 +135,12 @@ export default function Book() {
   }, [step, barberId, serviceIds, details.couponCode, details.redeemPoints]);
 
   async function submit() {
-    if (!user && (!details.name || !details.email || !details.phone)) return toast.error('Please fill in your contact details');
+    if (!startAt) { toast.error('Please pick a time for your appointment.'); go(2); return; }
+    if (!user) {
+      if (!details.name.trim() || !details.email.trim() || !details.phone.trim()) return toast.error('Please fill in your name, email and phone.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email.trim())) return toast.error('Please enter a valid email address.');
+      if (!/^\+?[0-9\s\-()]{7,20}$/.test(details.phone.trim())) return toast.error('Please enter a valid phone number, e.g. +91 98200 00000.');
+    }
     setSubmitting(true);
     try {
       const { data } = await api.post('/appointments', {
@@ -133,7 +159,7 @@ export default function Book() {
   if (!svcData || !barberData) return <PageLoader />;
   if (booked) return <Success appt={booked} user={user} />;
 
-  const canNext = [serviceIds.length > 0, !!barberId, !!startAt, true][step];
+  const canNext = [serviceIds.length > 0, !!barberId && !!eligible?.some((b) => b.id === barberId), !!startAt, true][step];
   const grouped = services.reduce((g, s) => ({ ...g, [s.category]: [...(g[s.category] || []), s] }), {});
 
   return (

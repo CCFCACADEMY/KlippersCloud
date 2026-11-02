@@ -49,7 +49,7 @@ function ruleBased(p) {
       why: `Complements a ${shape} face shape and works with ${p.hairType} hair.`,
       maintenance: MAINT[style] || 'medium',
       suggested_services: ['Classic Haircut', ...(beard ? ['Beard Trim & Shape'] : [])],
-      barber_instructions: `Ask for a ${style.toLowerCase()}${beard ? ' and tidy the beard line to match' : ''}.`,
+      barber_instructions: `Ask for ${/^[aeiou]/i.test(style) ? 'an' : 'a'} ${style.toLowerCase()}${beard ? ' and tidy the beard line to match' : ''}.`,
     })),
     products: p.hairType === 'curly' ? ['Curl cream', 'Leave-in conditioner'] : ['Matte clay', 'Sea salt spray'],
   };

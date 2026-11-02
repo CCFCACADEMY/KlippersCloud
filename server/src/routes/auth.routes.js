@@ -149,7 +149,7 @@ router.post('/forgot-password', authLimiter, validate({ body: z.object({ email }
   res.json({ message: 'If that email exists, a reset link has been sent.' });
 }));
 
-router.post('/reset-password', authLimiter, validate({ body: z.object({ token: z.string().min(20), password }) }),
+router.post('/reset-password', authLimiter, validate({ body: z.object({ token: z.string().min(20, 'Reset link is invalid or has expired'), password }) }),
   asyncHandler(async (req, res) => {
     const hash = await bcrypt.hash(req.body.password, BCRYPT_ROUNDS);
     const user = await one(
