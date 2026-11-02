@@ -47,7 +47,7 @@ me.patch('/', validate({
     title: z.string().max(60).optional(), bio: z.string().max(2000).optional().nullable(),
     experience_years: z.coerce.number().int().min(0).max(70).optional(),
     specialties: z.array(z.string().max(40)).max(12).optional(),
-    photo_url: z.string().url().max(500).optional().nullable(),
+    photo_url: z.string().max(400_000).refine((v) => /^(https:\/\/\S+|\/images\/[\w./-]+)$/i.test(v) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v), 'Photo must be an https URL or an uploaded image').optional().nullable(),
     auto_confirm: z.boolean().optional(),
     slot_interval: z.coerce.number().refine((v) => [5, 10, 15, 20, 30, 60].includes(v)).optional(),
   }),

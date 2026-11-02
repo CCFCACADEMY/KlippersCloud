@@ -49,6 +49,7 @@ export default function Book() {
 
   const { data: svcData } = useFetch('/services');
   const { data: barberData } = useFetch('/barbers');
+  const { data: pub } = useFetch('/settings/public');
   const services = svcData?.services || [];
   const selectedServices = services.filter((s) => serviceIds.includes(s.id));
   const go = (n) => setStep([n, n > step ? 1 : -1]);
@@ -246,7 +247,7 @@ export default function Book() {
                       <div className="grid gap-4 sm:grid-cols-3">
                         <Field label="Full name"><Input value={details.name} onChange={(e) => setDetails({ ...details, name: e.target.value })} autoComplete="name" /></Field>
                         <Field label="Email"><Input type="email" value={details.email} onChange={(e) => setDetails({ ...details, email: e.target.value })} autoComplete="email" /></Field>
-                        <Field label="Phone"><Input type="tel" value={details.phone} onChange={(e) => setDetails({ ...details, phone: e.target.value })} autoComplete="tel" placeholder="+1 555 000 0000" /></Field>
+                        <Field label="Phone"><Input type="tel" value={details.phone} onChange={(e) => setDetails({ ...details, phone: e.target.value })} autoComplete="tel" placeholder="+91 98200 00000" /></Field>
                       </div>
                     </>
                   )}
@@ -261,7 +262,7 @@ export default function Book() {
                       </div>
                     </Field>
                     {user?.role === 'customer' && (
-                      <Field label={`Redeem points (you have ${user.loyalty_points})`} hint="Min 100 points · 100 pts = $5"
+                      <Field label={`Redeem points (you have ${user.loyalty_points})`} hint={`Min ${pub?.settings.loyalty_min_redeem ?? 100} points · 100 pts = ${money(100 * (pub?.settings.loyalty_redeem_rate ?? 0.5))}`}
                         error={details.redeemPoints > 0 && quote?.error?.toLowerCase().includes('point') ? quote.error : null}>
                         <Input type="number" min={0} step={50} max={user.loyalty_points} value={details.redeemPoints || ''}
                           onChange={(e) => setDetails({ ...details, redeemPoints: Math.max(0, Number(e.target.value)) })} />
@@ -291,7 +292,7 @@ export default function Book() {
                   {quote.membershipDiscount > 0 && <Row label={`${quote.membership.plan} (−${quote.membership.discountPercent}%)`} value={`−${money(quote.membershipDiscount)}`} green />}
                   {quote.couponDiscount > 0 && <Row label={`Coupon ${quote.coupon.code}`} value={`−${money(quote.couponDiscount)}`} green />}
                   {quote.pointsDiscount > 0 && <Row label={`${quote.pointsUsed} points`} value={`−${money(quote.pointsDiscount)}`} green />}
-                  <Row label={`Tax (${quote.taxRate}%)`} value={money(quote.tax)} />
+                  <Row label={`GST (${quote.taxRate}%)`} value={money(quote.tax)} />
                   <div className="flex justify-between pt-2 text-base font-bold"><span>Total</span><span>{money(quote.total)}</span></div>
                 </div>
               )}

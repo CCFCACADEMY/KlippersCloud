@@ -10,8 +10,8 @@ export default function Footer() {
           <Logo />
           <p className="mt-3 max-w-sm text-sm muted">Sharp cuts, hot towels and zero waiting. Book online, earn rewards and look your best — every time.</p>
           <div className="mt-4 flex flex-wrap gap-4 text-sm muted">
-            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />120 Main St, New York</span>
-            <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />+1 555 0100</span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />14 Hill Road, Bandra West, Mumbai</span>
+            <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />+91 22 4000 1234</span>
             <span className="flex items-center gap-1.5"><Mail className="h-4 w-4" />hello@klippers.app</span>
           </div>
         </div>

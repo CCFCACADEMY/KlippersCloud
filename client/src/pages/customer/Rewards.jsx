@@ -17,7 +17,7 @@ export default function Rewards() {
       <Card className="mt-6 p-5 text-sm">
         <p className="font-semibold">How it works</p>
         <ul className="mt-2 list-inside list-disc space-y-1 muted">
-          <li>Earn {data.rules.perDollar} point per $1 spent (members earn more).</li>
+          <li>Earn 1 point for every {money(1 / data.rules.perDollar)} spent (members earn more).</li>
           <li>Get {data.rules.reviewBonus} bonus points for every review.</li>
           <li>Redeem from {data.rules.minRedeem} points at checkout — each point is worth {money(data.rules.redeemRate)}.</li>
         </ul>

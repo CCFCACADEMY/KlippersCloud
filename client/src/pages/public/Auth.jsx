@@ -79,7 +79,7 @@ export function Login() {
       <details className="mt-6 rounded-xl bg-black/5 p-3 text-xs dark:bg-white/5">
         <summary className="cursor-pointer font-semibold">Demo accounts</summary>
         <div className="mt-2 space-y-1">
-          {[['Customer', 'john@example.com'], ['Barber', 'marcus@klippers.app'], ['Admin', 'admin@klippers.app']].map(([r, e]) => (
+          {[['Customer', 'rahul@example.com'], ['Barber', 'arjun@klippers.app'], ['Admin', 'admin@klippers.app']].map(([r, e]) => (
             <button key={e} type="button" className="block w-full rounded-lg px-2 py-1 text-left hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setForm({ email: e, password: 'Password123' })}>
               <b>{r}:</b> {e} / Password123
             </button>

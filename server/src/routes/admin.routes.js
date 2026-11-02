@@ -114,10 +114,27 @@ router.get('/barbers', asyncHandler(async (_req, res) => {
 }));
 
 /** Create a barber account directly (pre-approved). */
+/**
+ * Barber photo: an https URL, or an uploaded image sent as a data URL
+ * (the admin UI resizes uploads to ~400px JPEG, typically 20–60 KB).
+ */
+const photo = z.string().max(400_000).refine(
+  (v) => /^(https:\/\/\S+|\/images\/[\w./-]+)$/i.test(v) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v),
+  'Photo must be an https URL or an uploaded JPEG/PNG/WebP image',
+);
+const barberProfile = {
+  title: z.string().trim().max(60).optional(),
+  bio: z.string().max(2000).optional().nullable(),
+  experience_years: z.coerce.number().int().min(0).max(70).optional(),
+  specialties: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+  photo_url: photo.optional().nullable(),
+  location_id: uuid.optional().nullable(),
+  commission_rate: z.coerce.number().min(0).max(100).optional(),
+  auto_confirm: z.boolean().optional(),
+};
+
 router.post('/barbers', validate({
-  body: z.object({ name: z.string().min(2).max(80), email, phone: phone.optional(), password,
-    location_id: uuid.optional().nullable(), title: z.string().max(60).optional(), experience_years: z.number().int().min(0).max(70).optional(),
-    specialties: z.array(z.string().max(40)).max(12).optional(), commission_rate: z.number().min(0).max(100).optional() }),
+  body: z.object({ name: z.string().trim().min(2).max(80), email, phone: phone.optional(), password, ...barberProfile }),
 }), asyncHandler(async (req, res) => {
   const b = req.body;
   const barber = await withTransaction(async (c) => {
@@ -125,9 +142,9 @@ router.post('/barbers', validate({
       "INSERT INTO users (name, email, phone, password_hash, role) VALUES ($1,$2,$3,$4,'barber') RETURNING id",
       [b.name, b.email, b.phone || null, await bcrypt.hash(b.password, 12)]);
     const { rows: [br] } = await c.query(
-      `INSERT INTO barbers (user_id, location_id, title, experience_years, specialties, commission_rate, is_approved)
-       VALUES ($1,$2,COALESCE($3,'Barber'),COALESCE($4,0),COALESCE($5,'{}'),COALESCE($6,60),TRUE) RETURNING *`,
-      [u.id, b.location_id || null, b.title, b.experience_years, b.specialties, b.commission_rate]);
+      `INSERT INTO barbers (user_id, location_id, title, bio, experience_years, specialties, photo_url, commission_rate, auto_confirm, is_approved)
+       VALUES ($1,$2,COALESCE($3,'Barber'),$4,COALESCE($5,0),COALESCE($6::text[],'{}'),$7,COALESCE($8,60),COALESCE($9,FALSE),TRUE) RETURNING *`,
+      [u.id, b.location_id || null, b.title || null, b.bio || null, b.experience_years, b.specialties, b.photo_url || null, b.commission_rate, b.auto_confirm]);
     await c.query(`INSERT INTO working_hours (barber_id, day_of_week, is_off) SELECT $1, d, d = 0 FROM generate_series(0,6) d`, [br.id]);
     await c.query('INSERT INTO barber_services (barber_id, service_id) SELECT $1, id FROM services WHERE is_active', [br.id]);
     return br;
@@ -137,15 +154,23 @@ router.post('/barbers', validate({
 
 router.patch('/barbers/:id', validate({
   params: idParam,
-  body: z.object({ is_approved: z.boolean().optional(), location_id: uuid.optional().nullable(), commission_rate: z.number().min(0).max(100).optional(),
-    title: z.string().max(60).optional(), auto_confirm: z.boolean().optional() }),
+  body: z.object({ is_approved: z.boolean().optional(), name: z.string().trim().min(2).max(80).optional(), phone: phone.optional().nullable(), ...barberProfile }),
 }), asyncHandler(async (req, res) => {
   const before = await one('SELECT * FROM barbers WHERE id = $1', [req.params.id]);
   if (!before) throw ApiError.notFound('Barber not found');
-  const e = Object.entries(req.body).filter(([, v]) => v !== undefined);
-  if (!e.length) throw ApiError.badRequest('Nothing to update');
-  const barber = await one(`UPDATE barbers SET ${e.map(([k], i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1 RETURNING *`,
-    [req.params.id, ...e.map(([, v]) => v)]);
+  const { name, phone: tel, ...fields } = req.body;
+  const e = Object.entries(fields).filter(([, v]) => v !== undefined);
+  if (!e.length && name === undefined && tel === undefined) throw ApiError.badRequest('Nothing to update');
+  const barber = await withTransaction(async (c) => {
+    if (name !== undefined || tel !== undefined) {
+      await c.query('UPDATE users SET name = COALESCE($2, name), phone = CASE WHEN $3 THEN $4 ELSE phone END, updated_at = now() WHERE id = $1',
+        [before.user_id, name ?? null, tel !== undefined, tel ?? null]);
+    }
+    if (!e.length) return (await c.query('SELECT * FROM barbers WHERE id = $1', [req.params.id])).rows[0];
+    // Keys are whitelisted by the Zod schema above
+    return (await c.query(`UPDATE barbers SET ${e.map(([k], i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1 RETURNING *`,
+      [req.params.id, ...e.map(([, v]) => v)])).rows[0];
+  });
   if (!before.is_approved && barber.is_approved) {
     // Newly approved: offer all services by default and notify
     await query('INSERT INTO barber_services (barber_id, service_id) SELECT $1, id FROM services WHERE is_active ON CONFLICT DO NOTHING', [barber.id]);

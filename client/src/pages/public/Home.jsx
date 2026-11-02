@@ -43,7 +43,7 @@ export default function Home() {
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="relative">
             <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-[2rem] bg-ink-900 shadow-2xl ring-1 ring-brass-400/30">
-              <img src="https://picsum.photos/seed/klippers-hero/800/1000" alt="Barber at work" className="h-full w-full object-cover opacity-80" />
+              <img src="/images/hero.svg" alt="Illustration of a Klippers master barber" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/20 to-transparent" />
               <div className="absolute left-4 top-4 h-28 w-3 overflow-hidden rounded-full ring-2 ring-white/40"><div className="pole-stripes h-full animate-pole" /></div>
               <Card className="absolute bottom-5 left-5 right-5 flex items-center gap-3 p-4">

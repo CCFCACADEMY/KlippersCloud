@@ -8,7 +8,7 @@
  *   + tax (on the discounted amount)
  */
 import { one, many } from '../db/pool.js';
-import { money } from '../utils/helpers.js';
+import { money, formatMoney } from '../utils/helpers.js';
 import { ApiError } from '../utils/ApiError.js';
 import { getSettings } from './settings.service.js';
 
@@ -34,7 +34,7 @@ export async function validateCoupon(code, userId, amount) {
   const now = new Date();
   if (c.valid_from > now || (c.valid_until && c.valid_until < now)) throw ApiError.badRequest('Coupon has expired');
   if (c.max_uses !== null && c.used_count >= c.max_uses) throw ApiError.badRequest('Coupon usage limit reached');
-  if (amount < Number(c.min_amount)) throw ApiError.badRequest(`Coupon requires a minimum spend of $${c.min_amount}`);
+  if (amount < Number(c.min_amount)) throw ApiError.badRequest(`Coupon requires a minimum spend of ${formatMoney(c.min_amount)}`);
   if (userId) {
     const { count } = await one('SELECT count(*)::int AS count FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2', [c.id, userId]);
     if (count >= c.per_user_limit) throw ApiError.badRequest('You have already used this coupon');

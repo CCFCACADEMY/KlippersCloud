@@ -20,6 +20,7 @@ import { getSettings } from '../services/settings.service.js';
 import { notifyUser } from '../services/notification.service.js';
 import { emit } from '../services/socket.js';
 import { dayjs } from '../utils/time.js';
+import { formatMoney } from '../utils/helpers.js';
 
 const router = Router();
 const xml = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -38,7 +39,7 @@ router.post('/whatsapp', asyncHandler(async (req, res) => {
 
   switch ((cmd || '').toUpperCase()) {
     case 'SERVICES':
-      return reply(res, `💈 Services:\n${services.map((s, i) => `${i + 1}. ${s.name} — $${s.price} (${s.duration_min}m)`).join('\n')}`);
+      return reply(res, `💈 Services:\n${services.map((s, i) => `${i + 1}. ${s.name} — ${formatMoney(s.price)} (${s.duration_min}m)`).join('\n')}`);
     case 'BARBERS':
       return reply(res, `✂ Barbers:\n${barbers.map((b, i) => `${i + 1}. ${b.name}`).join('\n')}`);
     case 'SLOTS': {
@@ -63,7 +64,7 @@ router.post('/whatsapp', asyncHandler(async (req, res) => {
           [appt.id, s.id, q.items[0].name, q.items[0].price, q.items[0].duration_min]);
         notifyUser(b.user_id, { type: 'new_booking', title: 'New WhatsApp booking', body: `${name} booked ${s.name}.`, sms: false });
         emit(`barber:${b.id}`, 'slots:changed', { barberId: b.id });
-        return reply(res, `✅ Booked! ${s.name} with ${b.name} on ${dayjs(slot.start).tz(settings.default_timezone).format('ddd MMM D, h:mm A')}.\nTotal: $${q.total}\nCode: ${appt.checkin_code} (show at the shop, or CANCEL ${appt.checkin_code})`);
+        return reply(res, `✅ Booked! ${s.name} with ${b.name} on ${dayjs(slot.start).tz(settings.default_timezone).format('ddd MMM D, h:mm A')}.\nTotal: ${formatMoney(q.total)}\nCode: ${appt.checkin_code} (show at the shop, or CANCEL ${appt.checkin_code})`);
       } catch (e) {
         if (e.code === '23P01') return reply(res, 'Someone just took that slot. Send SLOTS again.');
         throw e;

@@ -15,7 +15,7 @@ import { validateCoupon } from '../services/pricing.service.js';
 import { recommendHairstyles } from '../services/ai.service.js';
 import { notifyUser, sendEmail } from '../services/notification.service.js';
 import { emit } from '../services/socket.js';
-import { randomCode } from '../utils/helpers.js';
+import { randomCode, formatMoney } from '../utils/helpers.js';
 import { dayjs } from '../utils/time.js';
 
 const router = Router();
@@ -94,7 +94,7 @@ router.post('/memberships/plans', authenticate, authorize('admin'), validate({
 
 // ------------------------------------------------------------ gift cards
 router.post('/gift-cards/purchase', authenticate, validate({
-  body: z.object({ amount: z.number().min(10).max(1000), recipientName: z.string().min(2).max(80), recipientEmail: email, message: z.string().max(300).optional() }),
+  body: z.object({ amount: z.number().min(100).max(50000), recipientName: z.string().min(2).max(80), recipientEmail: email, message: z.string().max(300).optional() }),
 }), asyncHandler(async (req, res) => {
   const code = randomCode(12);
   const payment = await createPayment({ userId: req.user.id, purpose: 'gift_card', amount: req.body.amount, method: 'card', metadata: { giftCardCode: code } });
@@ -104,7 +104,7 @@ router.post('/gift-cards/purchase', authenticate, validate({
      VALUES ($1,$2,$2,$3,$4,$5,$6,$7, now() + interval '1 year') RETURNING *`,
     [code, req.body.amount, req.user.id, req.body.recipientName, req.body.recipientEmail, req.body.message || null, active]);
   if (active) {
-    sendEmail(req.body.recipientEmail, `You received a $${req.body.amount} Klippers gift card!`,
+    sendEmail(req.body.recipientEmail, `You received a ${formatMoney(req.body.amount)} Klippers gift card!`,
       `${req.user.name} sent you a gift card${req.body.message ? `:\n"${req.body.message}"` : '.'}\n\nCode: ${code}\nUse it at checkout for any service.`);
   }
   res.status(201).json({ giftCard: card, payment });

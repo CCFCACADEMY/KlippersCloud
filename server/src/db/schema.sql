@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS locations (
   address     TEXT NOT NULL,
   city        TEXT NOT NULL,
   phone       TEXT,
-  timezone    TEXT NOT NULL DEFAULT 'America/New_York',
+  timezone    TEXT NOT NULL DEFAULT 'Asia/Kolkata',
   is_active   BOOLEAN NOT NULL DEFAULT TRUE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS services (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name          TEXT NOT NULL,
   slug          TEXT NOT NULL UNIQUE,
-  category      service_category NOT NULL,
+  category      TEXT NOT NULL,            -- haircut, beard, … or any admin-defined type
   description   TEXT,
   duration_min  INTEGER NOT NULL CHECK (duration_min BETWEEN 5 AND 480),
   price         NUMERIC(10,2) NOT NULL CHECK (price >= 0),
@@ -136,6 +136,13 @@ CREATE TABLE IF NOT EXISTS services (
   sort_order    INTEGER NOT NULL DEFAULT 0,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Older installs used a fixed enum for categories; convert to free text so admins can add new types.
+DO $$ BEGIN
+  IF (SELECT data_type FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'category') = 'USER-DEFINED' THEN
+    ALTER TABLE services ALTER COLUMN category TYPE TEXT USING category::text;
+  END IF;
+END $$;
 
 -- Which barber offers which service (optionally with their own price/duration)
 CREATE TABLE IF NOT EXISTS barber_services (

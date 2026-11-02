@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CalendarDays, Gift, Heart, Trophy, Crown } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch';
+import { money } from '../../lib/format';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, Card, EmptyState, PageHeader, PageLoader, StatCard, Stars } from '../../components/ui';
 import AppointmentCard from '../../components/appointments/AppointmentCard';
@@ -16,7 +17,7 @@ export default function CustomerDashboard() {
       <PageHeader title={`Hey ${user.name.split(' ')[0]} 👋`} subtitle="Here's what's coming up." actions={<Link to="/book" className="btn-primary">Book appointment</Link>} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Upcoming" value={data.upcoming.length} icon={CalendarDays} />
-        <StatCard label="Reward points" value={rewards.points} icon={Gift} sub={`≈ $${(rewards.points * 0.05).toFixed(2)} value`} />
+        <StatCard label="Reward points" value={rewards.points} icon={Gift} sub={`≈ ${money(rewards.cashValue)} value`} />
         <StatCard label="Visits" value={rewards.visits} icon={Trophy} />
         <StatCard label="Favorite barbers" value={data.favorites.length} icon={Heart} />
       </div>

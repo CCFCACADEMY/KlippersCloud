@@ -31,10 +31,12 @@ try {
   await waitForDatabase();
   await migrate(); // idempotent — keeps schema current on every deploy
   if (env.seedOnEmpty) {
+    // Demo mode: load demo data into an empty database, or refresh it when the demo data version changes.
+    const { seed, SEED_VERSION } = await import('./db/seed.js');
     const { rows: [{ n }] } = await pool.query('SELECT count(*)::int AS n FROM users');
-    if (n === 0) {
-      const { seed } = await import('./db/seed.js');
-      console.log('🌱 Empty database — loading demo data…', await seed());
+    const stored = (await pool.query("SELECT value FROM settings WHERE key = 'demo_seed_version'")).rows[0]?.value;
+    if (n === 0 || stored !== SEED_VERSION) {
+      console.log(n === 0 ? '🌱 Empty database — loading demo data…' : `🌱 Demo data ${stored ?? '(unversioned)'} → ${SEED_VERSION}, re-seeding…`, await seed());
     }
   }
   if (env.enableJobs) startJobs();

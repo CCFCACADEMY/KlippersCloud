@@ -25,7 +25,7 @@ style advisor), so the whole app runs locally with **only PostgreSQL**.
 | **Roles** | Guest (browse + guest checkout + manage booking by code), Customer, Barber, Admin — enforced server-side by `authorize()` middleware and client-side by `ProtectedRoute` |
 | **Customer** | Register/login/Google, profile & notification prefs, browse barbers (search/filter/sort), profiles with ratings, specialties, portfolio & reviews, services & pricing, 4-step animated booking, reschedule, cancel (auto-refund policy), history, favourites, confirmations, email/SMS/push notifications, reviews (+bonus points), online/cash/gift-card payment, invoices, loyalty points & tiers, waiting list |
 | **Barber** | Self-registration (admin approval), profile, weekly hours with breaks, vacation/unavailable dates, offered services with custom price/duration, auto-confirm toggle, today's schedule, accept/reject requests, check-in → start → complete / no-show, earnings (commission) dashboard, revenue chart, stats, top customers, customer history & private notes, review replies, walk-ins & queue |
-| **Admin** | KPI dashboard, users (search, role, suspend/activate, point adjustments), barbers (approve, location, commission), services CRUD, appointments (list + calendar, walk-ins), payments (invoices, partial/full refunds, cash settlement), review moderation, coupons, queue, reports with CSV export, business settings, locations, membership plans, gift cards |
+| **Admin** | KPI dashboard, users (search, role, suspend/activate, point adjustments), barbers (add & edit full profiles with photo upload, approve, location, commission), services CRUD incl. admin-defined service types, appointments (list + calendar, walk-ins), payments (invoices, partial/full refunds, cash settlement), review moderation, coupons, queue, reports with CSV export, business settings, locations, membership plans, gift cards |
 | **Appointments** | Real-time slot availability (Socket.IO), day/week/month calendar, slot engine (hours, breaks, time off, lead time, booking window), **DB-level double-booking prevention**, confirmation workflow, 24h & 1h reminders, waiting list with auto-notify on cancellations, walk-in queue with ETA, walk-in bookings |
 | **Payments** | Stripe PaymentIntents + webhook (or mock), cash, gift cards, invoice numbers & printable invoices, refunds, coupons, membership discounts, loyalty redemption, configurable tax |
 | **Reporting** | Revenue, appointments (+busiest hours), customer retention cohorts, service popularity, barber performance — JSON or CSV |
@@ -116,10 +116,16 @@ npm run dev:web     # http://localhost:5173  (proxies /api and websockets)
 | Role | Email |
 |---|---|
 | Admin | `admin@klippers.app` |
-| Barber | `marcus@klippers.app` (auto-confirms) · `diego@klippers.app` (manual approval) · `sophie@`, `andre@`, `liam@`, `kofi@klippers.app` |
-| Customer | `john@example.com` (Gold Club member) · `emily@example.com` … `ethan@example.com` |
+| Barber | `arjun@klippers.app` (auto-confirms) · `vikram@klippers.app` (manual approval) · `priya@`, `rohan@`, `karthik@`, `imran@klippers.app` |
+| Customer | `rahul@example.com` (Gold Club member) · `ananya@`, `aditya@`, `siddharth@`, `kabir@`, `aarav@`, `neha@`, `varun@`, `ishaan@`, `dev@example.com` |
 
-Coupons: `WELCOME10`, `FRESH5`, `SUMMER20` · Gift card: `GIFT-DEMO-2026` ($100)
+Coupons: `WELCOME10` (10%), `FLAT100` (₹100 off ≥ ₹500), `FESTIVE20` (20% off ≥ ₹800) · Gift card: `GIFT-DEMO-2026` (₹2,000)
+
+**Localisation:** prices are in ₹ INR (Indian digit grouping) with 18% GST; the demo shops are Klippers Bandra (Mumbai)
+and Klippers Indiranagar (Bengaluru) in `Asia/Kolkata`. Currency, GST rate, loyalty rates and timezone are editable in
+Admin → Settings. Barber portraits, the hero art and the before/after gallery are original illustrations bundled with
+the app (`client/public/images`, regenerate with `node scripts/generate-illustrations.mjs`); replace any portrait by
+uploading a real photo in Admin → Barbers.
 
 ### Tests
 ```bash

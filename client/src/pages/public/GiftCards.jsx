@@ -10,7 +10,7 @@ import { Button, Card, Field, Input, Textarea, cn } from '../../components/ui';
 export default function GiftCards() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ amount: 50, recipientName: '', recipientEmail: '', message: '' });
+  const [form, setForm] = useState({ amount: 1000, recipientName: '', recipientEmail: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [card, setCard] = useState(null);
   const [code, setCode] = useState('');
@@ -66,15 +66,15 @@ export default function GiftCards() {
             <div>
               <span className="label">Amount</span>
               <div className="grid grid-cols-4 gap-2">
-                {[25, 50, 100, 150].map((a) => (
+                {[500, 1000, 2000, 5000].map((a) => (
                   <button type="button" key={a} onClick={() => setForm({ ...form, amount: a })}
                     className={cn('rounded-xl border py-3 font-semibold transition', Number(form.amount) === a ? 'border-brass-400 bg-brass-400 text-ink-900' : 'border-black/10 dark:border-white/10')}>
-                    ${a}
+                    {money(a)}
                   </button>
                 ))}
               </div>
             </div>
-            <Field label="Custom amount ($10–$1000)"><Input type="number" min={10} max={1000} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></Field>
+            <Field label="Custom amount (₹100 – ₹50,000)"><Input type="number" min={100} max={50000} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></Field>
             <Field label="Recipient name"><Input required value={form.recipientName} onChange={(e) => setForm({ ...form, recipientName: e.target.value })} /></Field>
             <Field label="Recipient email"><Input required type="email" value={form.recipientEmail} onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })} /></Field>
             <Field label="Personal message (optional)"><Textarea maxLength={300} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} /></Field>

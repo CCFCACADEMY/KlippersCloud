@@ -12,19 +12,20 @@ import { idParam } from '../validators/common.js';
 import { getSettings } from '../services/settings.service.js';
 
 const router = Router();
-const CATEGORIES = ['haircut', 'beard', 'coloring', 'wash', 'facial', 'package', 'custom'];
+// Built-in types are haircut, beard, coloring, wash, facial, package, custom; admins can add their own.
+const category = z.string().trim().toLowerCase().min(2).max(40).regex(/^[a-z0-9 &'-]+$/, 'Letters, numbers, spaces, & and - only');
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 // ------------------------------------------------------------ services
 router.get('/services', validate({
-  query: z.object({ category: z.enum(CATEGORIES).optional(), all: z.string().optional() }),
+  query: z.object({ category: category.optional(), all: z.string().optional() }),
 }), asyncHandler(async (req, res) => {
   const includeInactive = req.query.all === 'true';
   const rows = await many(
     `SELECT s.*, (SELECT count(*)::int FROM barber_services bs WHERE bs.service_id = s.id) AS barber_count
        FROM services s
-      WHERE ($1::service_category IS NULL OR s.category = $1) AND ($2 OR s.is_active)
+      WHERE ($1::text IS NULL OR s.category = $1) AND ($2 OR s.is_active)
       ORDER BY s.sort_order, s.name`,
     [req.query.category || null, includeInactive],
   );
@@ -39,10 +40,10 @@ router.get('/services/:id', validate({ params: idParam }), asyncHandler(async (r
 
 const serviceBody = z.object({
   name: z.string().trim().min(2).max(80),
-  category: z.enum(CATEGORIES),
+  category,
   description: z.string().max(1000).optional().nullable(),
   duration_min: z.coerce.number().int().min(5).max(480),
-  price: z.coerce.number().min(0).max(10000),
+  price: z.coerce.number().min(0).max(100000),
   image_url: z.string().url().max(500).optional().nullable(),
   is_active: z.boolean().optional(),
   sort_order: z.coerce.number().int().optional(),
@@ -93,7 +94,7 @@ const locationBody = z.object({
 router.post('/locations', authenticate, authorize('admin'), validate({ body: locationBody }), asyncHandler(async (req, res) => {
   const b = req.body;
   res.status(201).json({ location: await one(
-    `INSERT INTO locations (name, address, city, phone, timezone) VALUES ($1,$2,$3,$4,COALESCE($5,'America/New_York')) RETURNING *`,
+    `INSERT INTO locations (name, address, city, phone, timezone) VALUES ($1,$2,$3,$4,COALESCE($5,'Asia/Kolkata')) RETURNING *`,
     [b.name, b.address, b.city, b.phone, b.timezone]) });
 }));
 

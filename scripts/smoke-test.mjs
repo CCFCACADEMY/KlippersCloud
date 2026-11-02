@@ -94,8 +94,8 @@ await check('Public catalogue (services, barbers, locations)', async () => {
 });
 
 const tokens = {};
-for (const [role, email, home] of [['customer', 'john@example.com', '/api/me/dashboard'],
-  ['barber', 'marcus@klippers.app', '/api/barbers/me/dashboard'], ['admin', 'admin@klippers.app', '/api/admin/dashboard']]) {
+for (const [role, email, home] of [['customer', 'rahul@example.com', '/api/me/dashboard'],
+  ['barber', 'arjun@klippers.app', '/api/barbers/me/dashboard'], ['admin', 'admin@klippers.app', '/api/admin/dashboard']]) {
   await check(`Login as ${role} + dashboard`, async () => {
     const r = await login(email);
     assert(r.json.user.role === role, `expected role ${role}, got ${r.json.user.role}`);
@@ -122,13 +122,13 @@ await check('Role-based access control', async () => {
 });
 
 await check('Wrong password rejected', async () => {
-  const r = await http('/api/auth/login', { method: 'POST', body: { email: 'john@example.com', password: 'wrong-password-1' } });
+  const r = await http('/api/auth/login', { method: 'POST', body: { email: 'rahul@example.com', password: 'wrong-password-1' } });
   assert(r.status === 401, `HTTP ${r.status}`);
 });
 
 let barberId; let serviceId; let slot;
 await check('Availability & price quote', async () => {
-  const b = (await http('/api/barbers?search=Marcus')).json.barbers[0];
+  const b = (await http('/api/barbers?search=Arjun')).json.barbers[0];
   barberId = b.id;
   serviceId = (await http(`/api/barbers/${barberId}`)).json.services[0].id;
   for (let i = 3; i < 21 && !slot; i++) {

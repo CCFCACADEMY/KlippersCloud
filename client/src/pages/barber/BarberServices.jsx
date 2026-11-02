@@ -29,7 +29,7 @@ export default function BarberServices() {
           <Card key={s.id} className={`flex flex-wrap items-center gap-4 p-4 ${s.offered ? '' : 'opacity-60'}`}>
             <span className="rounded-xl bg-brass-400/15 p-2.5 text-brass-500"><ServiceIcon category={s.category} /></span>
             <div className="min-w-[160px] flex-1"><p className="font-semibold">{s.name}</p><p className="text-xs muted">Default {money(s.base_price)} · {s.base_duration} min</p></div>
-            <input type="number" min={0} step="0.5" className="input w-28 py-1.5" placeholder="Price $" value={s.custom_price ?? ''} disabled={!s.offered} onChange={(e) => set(s.id, { custom_price: e.target.value === '' ? '' : Number(e.target.value) })} aria-label="Custom price" />
+            <input type="number" min={0} step="any" className="input w-28 py-1.5" placeholder="Price ₹" value={s.custom_price ?? ''} disabled={!s.offered} onChange={(e) => set(s.id, { custom_price: e.target.value === '' ? '' : Number(e.target.value) })} aria-label="Custom price" />
             <input type="number" min={5} step={5} className="input w-28 py-1.5" placeholder="Minutes" value={s.custom_duration ?? ''} disabled={!s.offered} onChange={(e) => set(s.id, { custom_duration: e.target.value === '' ? '' : Number(e.target.value) })} aria-label="Custom duration" />
             <Toggle checked={s.offered} onChange={(v) => set(s.id, { offered: v })} label={<span className="w-14 text-xs">{s.offered ? 'Offered' : 'Off'}</span>} />
           </Card>

@@ -34,7 +34,9 @@ router.get('/dashboard', authenticate, authorize('customer'), asyncHandler(async
            FROM users WHERE id = $1`, [uid]),
     activeMembership(uid),
   ]);
-  res.json({ upcoming, past, favorites, rewards: { points: user.loyalty_points, lifetime: user.lifetime, visits: user.visits, tier: tierFor(user.lifetime) }, membership });
+  const { loyalty_redeem_rate: rate } = await getSettings();
+  res.json({ upcoming, past, favorites, membership,
+    rewards: { points: user.loyalty_points, lifetime: user.lifetime, visits: user.visits, tier: tierFor(user.lifetime), cashValue: Math.round(user.loyalty_points * rate * 100) / 100 } });
 }));
 
 // ------------------------------------------------------------ reviews

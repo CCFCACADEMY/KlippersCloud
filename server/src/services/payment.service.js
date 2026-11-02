@@ -8,6 +8,7 @@ import { env } from '../config/env.js';
 import { one, query } from '../db/pool.js';
 import { ApiError } from '../utils/ApiError.js';
 import { money } from '../utils/helpers.js';
+import { getSettings } from './settings.service.js';
 
 export const stripe = env.stripeSecretKey ? new Stripe(env.stripeSecretKey) : null;
 export const paymentProvider = stripe ? 'stripe' : 'mock';
@@ -34,7 +35,7 @@ export async function createPayment({ userId, appointmentId = null, purpose = 'a
   if (stripe) {
     const intent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
-      currency: 'usd',
+      currency: ((await getSettings()).currency || 'inr').toLowerCase(),
       automatic_payment_methods: { enabled: true },
       metadata: { purpose, appointmentId: appointmentId || '', userId: userId || '', ...metadata },
     });

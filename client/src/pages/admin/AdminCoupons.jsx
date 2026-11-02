@@ -39,9 +39,9 @@ export default function AdminCoupons() {
         {form && (
           <form onSubmit={create} className="grid gap-3 sm:grid-cols-2">
             <Field label="Code"><Input required className="input uppercase" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></Field>
-            <Field label="Type"><Select value={form.discount_type} onChange={(e) => setForm({ ...form, discount_type: e.target.value })}><option value="percent">Percent</option><option value="fixed">Fixed $</option></Select></Field>
+            <Field label="Type"><Select value={form.discount_type} onChange={(e) => setForm({ ...form, discount_type: e.target.value })}><option value="percent">Percent</option><option value="fixed">Fixed ₹</option></Select></Field>
             <Field label="Value"><Input type="number" min={0.01} step="0.01" required value={form.discount_value} onChange={(e) => setForm({ ...form, discount_value: e.target.value })} /></Field>
-            <Field label="Min spend $"><Input type="number" min={0} value={form.min_amount} onChange={(e) => setForm({ ...form, min_amount: e.target.value })} /></Field>
+            <Field label="Min spend ₹"><Input type="number" min={0} value={form.min_amount} onChange={(e) => setForm({ ...form, min_amount: e.target.value })} /></Field>
             <Field label="Max total uses"><Input type="number" min={1} placeholder="Unlimited" value={form.max_uses} onChange={(e) => setForm({ ...form, max_uses: e.target.value })} /></Field>
             <Field label="Uses per customer"><Input type="number" min={1} value={form.per_user_limit} onChange={(e) => setForm({ ...form, per_user_limit: e.target.value })} /></Field>
             <Field label="Expires"><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} /></Field>

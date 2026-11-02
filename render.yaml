@@ -23,7 +23,7 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: SEED_ON_EMPTY        # loads demo accounts & data on first boot; set to false for a real shop
+      - key: SEED_ON_EMPTY        # DEMO MODE: loads demo data when empty AND re-seeds when the demo data version changes. Set false for a real shop!
         value: "true"
       # CLIENT_URL defaults to Render's public URL (RENDER_EXTERNAL_URL). Set it if you add a custom domain.
       # Optional integrations — fill in from the Render dashboard when ready:

@@ -9,9 +9,9 @@ import { Button, Card, Field, Input, PageHeader, PageLoader, Table, Tabs, Toggle
 
 const FIELDS = [
   ['business_name', 'Business name', 'text'], ['contact_email', 'Contact email', 'email'], ['contact_phone', 'Contact phone', 'text'],
-  ['tax_rate', 'Tax rate (%)', 'number'], ['booking_lead_minutes', 'Min. booking notice (minutes)', 'number'], ['booking_window_days', 'Booking window (days ahead)', 'number'],
-  ['cancellation_window_hours', 'Free cancellation window (hours)', 'number'], ['loyalty_points_per_dollar', 'Points per $1', 'number'],
-  ['loyalty_redeem_rate', '$ value per point', 'number'], ['loyalty_min_redeem', 'Min points to redeem', 'number'], ['review_bonus_points', 'Review bonus points', 'number'],
+  ['tax_rate', 'GST rate (%)', 'number'], ['booking_lead_minutes', 'Min. booking notice (minutes)', 'number'], ['booking_window_days', 'Booking window (days ahead)', 'number'],
+  ['cancellation_window_hours', 'Free cancellation window (hours)', 'number'], ['loyalty_points_per_dollar', 'Points per ₹1 spent (0.1 = 1 pt / ₹10)', 'number'],
+  ['loyalty_redeem_rate', '₹ value per point', 'number'], ['loyalty_min_redeem', 'Min points to redeem', 'number'], ['review_bonus_points', 'Review bonus points', 'number'],
   ['default_timezone', 'Default timezone', 'text'],
 ];
 
@@ -54,7 +54,7 @@ function Business() {
 
 function Locations() {
   const { data, reload } = useFetch('/locations');
-  const [form, setForm] = useState({ name: '', address: '', city: '', phone: '', timezone: 'America/New_York' });
+  const [form, setForm] = useState({ name: '', address: '', city: '', phone: '', timezone: 'Asia/Kolkata' });
   const add = async (e) => {
     e.preventDefault();
     try { await api.post('/locations', { ...form, phone: form.phone || null }); toast.success('Location added'); setForm({ ...form, name: '', address: '', city: '', phone: '' }); reload(); } catch (err) { toast.error(errMsg(err)); }
@@ -99,7 +99,7 @@ function Plans() {
           <p className="font-semibold">New plan</p>
           <Field label="Name"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="$/month"><Input type="number" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} /></Field>
+            <Field label="₹ / month"><Input type="number" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} /></Field>
             <Field label="Discount %"><Input type="number" value={form.discount_percent} onChange={(e) => setForm({ ...form, discount_percent: e.target.value })} /></Field>
             <Field label="Free cuts"><Input type="number" value={form.included_cuts} onChange={(e) => setForm({ ...form, included_cuts: e.target.value })} /></Field>
             <Field label="Points ×"><Input type="number" step="0.25" value={form.points_multiplier} onChange={(e) => setForm({ ...form, points_multiplier: e.target.value })} /></Field>

@@ -32,13 +32,13 @@ Rendered screenshots of the real app are in [`docs/screenshots/`](screenshots).
  (1)━━━━━━(2)━━━━━━(3)──────(4)          progress bar animates as you advance
 ┌─────────────────────────────────────────┐ ┌──────────────────────┐
 │ STEP 1  Services (multi-select)         │ │ Your booking         │
-│  HAIRCUTS                               │ │ Skin Fade     $42.00 │
+│  HAIRCUTS                               │ │ Skin Fade       ₹500 │
 │  [✂ Classic Haircut  $35  30m]  [✓ Skin…]│ │ ─────────────────── │
-│  BEARD & SHAVE …                        │ │ (MR) Marcus Reed     │
+│  BEARD & SHAVE …                        │ │ (AM) Arjun Mehta     │
 │ STEP 2  Barber cards (photo, ★, tags)   │ │ ⏱ Wed Nov 4 · 4:00PM │
 │ STEP 3  ┌ Month calendar ┐┌ Slots ─────┐│ │ Subtotal / member −% │
 │         │ • = open days  ││ MORNING    ││ │ Coupon / points −$   │
-│         │ [4] selected   ││[9:00][9:15]││ │ Tax 8.875%           │
+│         │ [4] selected   ││[9:00][9:15]││ │ GST 18%              │
 │         └────────────────┘│ ~~10:00~~  ││ │ TOTAL       $46.05   │
 │                           └────────────┘│ │ [‹] [  Continue   ]  │
 │ STEP 4  Guest name/email/phone (if no   │ └──────────────────────┘
@@ -67,7 +67,7 @@ Live: slots grey out instantly when someone else books (Socket.IO). Fully booked
 
 ## 4. Barber dashboard (`/barber`)
 ```
- Good morning, Marcus                                   [Open calendar]
+ Good morning, Arjun                                    [Open calendar]
  [Today 4] [Earnings (month) $X · 65%] [Lifetime $Y] [Repeat clients 72%]
  Booking requests (3)   ┌ card ─ [Accept] [Decline] ┐ ┌ card … ┐
  ┌ Today's schedule (timeline) ───────────┐ ┌ Appointment statistics ┐

@@ -57,7 +57,7 @@ function canAccess(user, appt) {
   return appt.customer_id === user.id;
 }
 
-const fmtWhen = (a) => dayjs(a.start_at).tz(a.timezone || 'America/New_York').format('ddd, MMM D [at] h:mm A');
+const fmtWhen = (a) => dayjs(a.start_at).tz(a.timezone || 'Asia/Kolkata').format('ddd, MMM D [at] h:mm A');
 
 /** Send the same message to the customer (user or guest). */
 async function notifyCustomer(appt, type, title, body) {
@@ -67,7 +67,7 @@ async function notifyCustomer(appt, type, title, body) {
 
 /** Tell waiting-list customers a slot opened up on that barber/day. */
 async function notifyWaitlist(appt) {
-  const date = dayjs(appt.start_at).tz(appt.timezone || 'America/New_York').format('YYYY-MM-DD');
+  const date = dayjs(appt.start_at).tz(appt.timezone || 'Asia/Kolkata').format('YYYY-MM-DD');
   const waiting = await many(
     `UPDATE waitlist SET status = 'notified'
       WHERE id IN (SELECT id FROM waitlist WHERE status = 'waiting' AND desired_date = $1

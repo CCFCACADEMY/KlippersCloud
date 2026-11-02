@@ -23,7 +23,7 @@ async function sendReminders(window, flag, label) {
        AND a.start_at > now() AND a.start_at <= now() + $1::interval
      RETURNING a.*, bu.name AS barber_name`, [window]);
   for (const a of due) {
-    const when = dayjs(a.start_at).tz('America/New_York').format('ddd h:mm A');
+    const when = dayjs(a.start_at).tz('Asia/Kolkata').format('ddd h:mm A');
     const body = `Reminder: your appointment with ${a.barber_name} is ${label} (${when}). Check-in code: ${a.checkin_code}.`;
     if (a.customer_id) await notifyUser(a.customer_id, { type: `reminder_${label === 'in 1 hour' ? '1h' : '24h'}`, title: 'Appointment reminder ⏰', body, data: { appointmentId: a.id } });
     else await notifyGuest({ email: a.guest_email, phone: a.guest_phone }, 'Appointment reminder', body);

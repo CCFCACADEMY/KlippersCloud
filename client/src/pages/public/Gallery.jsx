@@ -6,7 +6,7 @@ import BeforeAfter from '../../components/BeforeAfter';
 export default function Gallery() {
   const [tag, setTag] = useState('all');
   const { data } = useFetch('/gallery', { params: { tag: tag === 'all' ? undefined : tag } });
-  const tags = ['all', 'fade', 'beard', 'classic', 'color', 'curly', 'textured'];
+  const tags = ['all', 'fade', 'beard', 'textured', 'classic', 'buzz', 'wavy'];
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
       <h1 className="text-4xl font-bold">Before & after</h1>

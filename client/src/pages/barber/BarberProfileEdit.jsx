@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { api, errMsg } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
-import { Avatar, Button, Card, Field, Input, PageHeader, PageLoader, Select, Textarea, Toggle } from '../../components/ui';
+import { Button, Card, Field, Input, PageHeader, PageLoader, Select, Textarea, Toggle } from '../../components/ui';
 import Profile from '../customer/Profile';
+import PhotoInput from '../../components/ui/PhotoInput';
 
 export default function BarberProfileEdit() {
   const { data } = useFetch('/barbers/me');
@@ -23,7 +24,7 @@ export default function BarberProfileEdit() {
       <PageHeader title="Barber profile" subtitle="This is what customers see when choosing a barber." />
       <Card className="mb-6 p-6">
         <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
-          <div className="flex items-center gap-4 md:col-span-2"><Avatar src={form.photo_url} name={data.barber.name} size="xl" /><Field label="Photo URL" className="flex-1"><Input type="url" value={form.photo_url} onChange={(e) => setForm({ ...form, photo_url: e.target.value })} /></Field></div>
+          <div className="md:col-span-2"><span className="label">Photo</span><PhotoInput value={form.photo_url} name={data.barber.name} onChange={(v) => setForm({ ...form, photo_url: v })} /></div>
           <Field label="Title"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
           <Field label="Years of experience"><Input type="number" min={0} value={form.experience_years} onChange={(e) => setForm({ ...form, experience_years: e.target.value })} /></Field>
           <Field label="Bio" className="md:col-span-2"><Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={2000} /></Field>

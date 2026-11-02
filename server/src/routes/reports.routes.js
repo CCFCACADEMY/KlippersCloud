@@ -61,7 +61,7 @@ router.get('/appointments', validate({ query: rangeQuery }), asyncHandler(async 
             count(*) FILTER (WHERE source = 'guest')::int AS guest_bookings
        FROM appointments WHERE start_at::date BETWEEN $1 AND $2 GROUP BY 1 ORDER BY 1`, [from, to, req.query.groupBy]);
   const byHour = await many(
-    `SELECT extract(hour FROM start_at AT TIME ZONE 'America/New_York')::int AS hour, count(*)::int AS bookings
+    `SELECT extract(hour FROM start_at AT TIME ZONE 'Asia/Kolkata')::int AS hour, count(*)::int AS bookings
        FROM appointments WHERE start_at::date BETWEEN $1 AND $2 AND status NOT IN ('cancelled','rejected') GROUP BY 1 ORDER BY 1`, [from, to]);
   send(res, req.query, 'appointments', rows, { byHour, from, to });
 }));

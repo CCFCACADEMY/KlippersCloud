@@ -3,6 +3,11 @@ import crypto from 'node:crypto';
 /** Round to 2 decimal places for currency math. */
 export const money = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
+/** Currency display for emails, SMS, invoices and bot replies (default ₹ INR, Indian digit grouping). */
+export const formatMoney = (n, currency = 'INR') =>
+  new Intl.NumberFormat(currency.toUpperCase() === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency: currency.toUpperCase() })
+    .format(Number(n || 0));
+
 /** SHA-256 hex digest — used to store refresh/reset tokens without keeping the raw value. */
 export const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 

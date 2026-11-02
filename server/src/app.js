@@ -55,7 +55,7 @@ export function createApp() {
   // Stripe needs the raw body for signature verification — mount before express.json()
   app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), (req, res, next) => stripeWebhook(req, res).catch(next));
 
-  app.use(express.json({ limit: '100kb' }));
+  app.use(express.json({ limit: '600kb' })); // room for a resized barber photo upload
   app.use(express.urlencoded({ extended: false, limit: '100kb' })); // Twilio webhooks
   app.use(cookieParser());
 

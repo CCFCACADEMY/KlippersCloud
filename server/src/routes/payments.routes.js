@@ -13,7 +13,7 @@ import { createPayment, refundPayment, stripe, paymentProvider, nextInvoiceNumbe
 import { notifyUser } from '../services/notification.service.js';
 import { getSettings } from '../services/settings.service.js';
 import { env } from '../config/env.js';
-import { money, paginate } from '../utils/helpers.js';
+import { money, paginate, formatMoney } from '../utils/helpers.js';
 import { dayjs } from '../utils/time.js';
 
 const router = Router();
@@ -41,7 +41,7 @@ router.post('/appointments/:id', authenticate, validate({
       const { rows: [g] } = await c.query(
         'SELECT * FROM gift_cards WHERE code = $1 AND is_active AND (expires_at IS NULL OR expires_at > now()) FOR UPDATE', [code]);
       if (!g) throw ApiError.badRequest('Invalid or expired gift card');
-      if (Number(g.balance) < Number(appt.total)) throw ApiError.badRequest(`Gift card balance ($${g.balance}) is not enough`);
+      if (Number(g.balance) < Number(appt.total)) throw ApiError.badRequest(`Gift card balance (${formatMoney(g.balance)}) is not enough`);
       await c.query('UPDATE gift_cards SET balance = balance - $2 WHERE id = $1', [g.id, appt.total]);
       const { rows: [p] } = await c.query(
         `INSERT INTO payments (user_id, appointment_id, amount, tax, method, status, provider, provider_ref, invoice_number, paid_at)
@@ -55,7 +55,7 @@ router.post('/appointments/:id', authenticate, validate({
   const payment = await createPayment({ userId: appt.customer_id, appointmentId: appt.id, amount: appt.total, tax: appt.tax, method: req.body.method });
   if (payment.status === 'paid' && appt.customer_id) {
     notifyUser(appt.customer_id, { type: 'payment_received', title: 'Payment received', sms: false,
-      body: `We received $${payment.amount.toFixed(2)} for your appointment. Invoice ${payment.invoice_number}.`, data: { paymentId: payment.id } });
+      body: `We received ${formatMoney(payment.amount)} for your appointment. Invoice ${payment.invoice_number}.`, data: { paymentId: payment.id } });
   }
   res.status(201).json({ payment });
 }));
@@ -87,7 +87,7 @@ router.get('/:id/invoice', authenticate, validate({ params: idParam }), asyncHan
   const items = p.appointment_id ? await many('SELECT name, price FROM appointment_services WHERE appointment_id = $1', [p.appointment_id]) : [{ name: p.purpose === 'gift_card' ? 'Gift card' : 'Membership', price: p.amount }];
   const s = await getSettings();
   const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const $ = (n) => `$${Number(n || 0).toFixed(2)}`;
+  const $ = (n) => formatMoney(n, s.currency);
   res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${esc(p.invoice_number)}</title>
 <style>body{font-family:Inter,Arial,sans-serif;max-width:720px;margin:40px auto;color:#1a1a1d;padding:0 16px}
 h1{font-family:Georgia,serif;margin:0}.muted{color:#777}.row{display:flex;justify-content:space-between}
@@ -101,7 +101,7 @@ td:last-child,th:last-child{text-align:right}.total{font-size:20px;font-weight:7
 ${p.start_at ? `<p><b>Appointment:</b> ${dayjs(p.start_at).format('ddd, MMM D YYYY h:mm A')} with ${esc(p.barber_name)}</p>` : ''}
 <table><tr><th>Item</th><th>Amount</th></tr>${items.map((i) => `<tr><td>${esc(i.name)}</td><td>${$(i.price)}</td></tr>`).join('')}
 ${p.discount ? `<tr><td>Discounts</td><td>−${$(p.discount)}</td></tr>` : ''}
-<tr><td>Tax (${s.tax_rate}%)</td><td>${$(p.tax)}</td></tr>
+<tr><td>GST (${s.tax_rate}%)</td><td>${$(p.tax)}</td></tr>
 <tr><td class="total">Total</td><td class="total">${$(p.amount)}</td></tr>
 ${p.refunded_amount ? `<tr><td>Refunded</td><td>−${$(p.refunded_amount)}</td></tr>` : ''}</table>
 <p class="muted">Paid by ${esc(p.method.replace('_', ' '))}. Thank you for choosing ${esc(s.business_name)}!</p>
@@ -123,7 +123,7 @@ router.post('/:id/refund', authenticate, authorize('admin'), validate({
   const payment = await refundPayment(req.params.id, req.body.amount, req.body.reason);
   if (payment.user_id) {
     notifyUser(payment.user_id, { type: 'refund', title: 'Refund issued', sms: false,
-      body: `A refund of $${money(payment.refunded_amount).toFixed(2)} was issued for invoice ${payment.invoice_number}.` });
+      body: `A refund of ${formatMoney(payment.refunded_amount)} was issued for invoice ${payment.invoice_number}.` });
   }
   res.json({ payment });
 }));
@@ -145,7 +145,7 @@ export async function stripeWebhook(req, res) {
     const p = await one("UPDATE payments SET status = 'paid', paid_at = now() WHERE provider_ref = $1 RETURNING *", [intent.id]);
     if (p?.purpose === 'gift_card') await query('UPDATE gift_cards SET is_active = TRUE WHERE code = $1', [intent.metadata.giftCardCode]);
     if (p?.purpose === 'membership') await query("UPDATE memberships SET status = 'active' WHERE id = $1", [intent.metadata.membershipId]);
-    if (p?.user_id) notifyUser(p.user_id, { type: 'payment_received', title: 'Payment received', sms: false, body: `Payment of $${p.amount.toFixed(2)} received. Invoice ${p.invoice_number}.` });
+    if (p?.user_id) notifyUser(p.user_id, { type: 'payment_received', title: 'Payment received', sms: false, body: `Payment of ${formatMoney(p.amount)} received. Invoice ${p.invoice_number}.` });
   } else if (event.type === 'payment_intent.payment_failed') {
     await query("UPDATE payments SET status = 'failed' WHERE provider_ref = $1", [intent.id]);
   }

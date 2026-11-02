@@ -1,14 +1,18 @@
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
-export const money = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n || 0));
-export const compactMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(Number(n || 0));
+/** Prices are in Indian Rupees with Indian digit grouping (₹1,23,456). Whole rupees unless there are paise. */
+const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const inrCompact = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', notation: 'compact', maximumFractionDigits: 1 });
+export const CURRENCY_SYMBOL = '₹';
+export const money = (n) => inr.format(Number(n || 0));
+export const compactMoney = (n) => inrCompact.format(Number(n || 0));
 const d = (v) => (typeof v === 'string' ? parseISO(v) : v);
 /**
  * Shift an instant to the "wall clock" of an IANA timezone so date-fns can
  * format it. Appointment times are shown in the SHOP's timezone (appt.timezone),
  * not the viewer's, so everyone sees the same time the barber sees.
  */
-export const SHOP_TZ = 'America/New_York';
+export const SHOP_TZ = 'Asia/Kolkata';
 export const inTz = (v, tz = SHOP_TZ) => new Date(d(v).toLocaleString('en-US', { timeZone: tz }));
 export const fmtDate = (v, f = 'EEE, MMM d', tz) => format(tz === null ? d(v) : inTz(v, tz), f);
 export const fmtTime = (v, tz) => format(inTz(v, tz), 'h:mm a');
@@ -16,6 +20,10 @@ export const fmtDateTime = (v, tz) => format(inTz(v, tz), "EEE, MMM d '·' h:mm 
 export const hourIn = (v, tz) => inTz(v, tz).getHours();
 export const ago = (v) => formatDistanceToNow(d(v), { addSuffix: true });
 export const initials = (name = '') => name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+/** Display label for a service category (built-in or admin-defined, e.g. "head spa" → "Head Spa"). */
+const BUILTIN_CATEGORY_LABELS = { haircut: 'Haircuts', beard: 'Beard & Shave', coloring: 'Colouring', wash: 'Wash', facial: 'Facials', package: 'Packages', custom: 'Custom' };
+export const categoryLabel = (c = '') => BUILTIN_CATEGORY_LABELS[c] || c.replace(/\b\w/g, (m) => m.toUpperCase());
+
 export const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export const STATUS_STYLES = {
