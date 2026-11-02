@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { CalendarDays, Gift, Heart, Trophy, Crown } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch';
 import { money } from '../../lib/format';
+import { api, errMsg } from '../../lib/api';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, Card, EmptyState, PageHeader, PageLoader, StatCard, Stars } from '../../components/ui';
 import AppointmentCard from '../../components/appointments/AppointmentCard';
@@ -16,7 +18,7 @@ export default function CustomerDashboard() {
     <>
       <PageHeader title={`Hey ${user.name.split(' ')[0]} 👋`} subtitle="Here's what's coming up." actions={<Link to="/book" className="btn-primary">Book appointment</Link>} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Upcoming" value={data.upcoming.length} icon={CalendarDays} />
+        <StatCard label="Upcoming" value={data.upcomingCount ?? data.upcoming.length} icon={CalendarDays} />
         <StatCard label="Reward points" value={rewards.points} icon={Gift} sub={`≈ ${money(rewards.cashValue)} value`} />
         <StatCard label="Visits" value={rewards.visits} icon={Trophy} />
         <StatCard label="Favorite barbers" value={data.favorites.length} icon={Heart} />
@@ -43,7 +45,11 @@ export default function CustomerDashboard() {
           </Card>
           <Card className="p-5">
             <p className="flex items-center gap-2 font-semibold"><Crown className="h-4 w-4 text-brass-400" />Membership</p>
-            {membership ? <p className="mt-2 text-sm"><b>{membership.plan_name}</b> · {membership.discount_percent}% off every visit</p>
+            {membership ? <div className="mt-2 text-sm"><p><b>{membership.plan_name}</b> · {membership.discount_percent}% off every visit</p>
+              <button className="mt-2 text-xs text-red-500 hover:underline" onClick={async () => {
+                if (!confirm(`Cancel your ${membership.plan_name} membership? Discounts stop immediately.`)) return;
+                try { await api.post('/memberships/cancel'); toast.success('Membership cancelled'); reload(); } catch (e) { toast.error(errMsg(e)); }
+              }}>Cancel membership</button></div>
               : <p className="mt-2 text-sm muted">Save up to 25% on every visit. <Link to="/memberships" className="text-brass-500 hover:underline">Explore plans</Link></p>}
           </Card>
           <Card className="p-5">

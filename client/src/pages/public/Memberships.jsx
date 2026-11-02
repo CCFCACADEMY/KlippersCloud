@@ -33,6 +33,13 @@ export default function Memberships() {
         <h1 className="text-4xl font-bold sm:text-5xl">Membership plans</h1>
         <p className="mx-auto mt-3 max-w-xl muted">Look sharp all year. Members save on every visit, earn points faster and get priority booking.</p>
       </div>
+      {mine?.membership && (
+        <p className="mt-6 text-center text-sm">You're on <b>{mine.membership.plan_name}</b> (renews {new Date(mine.membership.renews_at).toLocaleDateString('en-IN')}).{' '}
+          <button className="text-red-500 hover:underline" onClick={async () => {
+            if (!confirm('Cancel your membership? Member discounts stop immediately.')) return;
+            try { await api.post('/memberships/cancel'); toast.success('Membership cancelled'); reload(); } catch (e) { toast.error(errMsg(e)); }
+          }}>Cancel membership</button></p>
+      )}
       <div className="mt-12 grid gap-6 md:grid-cols-3">
         {data.plans.map((p, i) => {
           const featured = i === 1;

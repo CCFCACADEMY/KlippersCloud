@@ -39,12 +39,12 @@ export default function BarberSchedule() {
         <Card className="p-5">
           <div className="space-y-3">
             {hours.map((h, i) => (
-              <div key={h.day_of_week} className="grid grid-cols-2 items-center gap-3 rounded-xl border border-black/5 p-3 dark:border-white/5 md:grid-cols-[120px_90px_1fr_1fr]">
+              <div key={h.day_of_week} className="grid min-w-0 grid-cols-2 items-center gap-3 rounded-xl border border-black/5 p-3 dark:border-white/5 md:grid-cols-[120px_90px_1fr_1fr]">
                 <p className="font-semibold">{DAYS[h.day_of_week]}</p>
                 <Toggle checked={!h.is_off} onChange={(v) => set(i, { is_off: !v })} label={<span className="text-xs muted">{h.is_off ? 'Off' : 'Open'}</span>} />
                 {!h.is_off && <>
-                  <div className="col-span-2 flex items-center gap-2 md:col-span-1"><span className="w-12 text-xs muted">Hours</span><input type="time" className="input py-1.5" value={h.start_time} onChange={(e) => set(i, { start_time: e.target.value })} /><span>–</span><input type="time" className="input py-1.5" value={h.end_time} onChange={(e) => set(i, { end_time: e.target.value })} /></div>
-                  <div className="col-span-2 flex items-center gap-2 md:col-span-1"><span className="w-12 text-xs muted">Break</span><input type="time" className="input py-1.5" value={h.break_start} onChange={(e) => set(i, { break_start: e.target.value })} /><span>–</span><input type="time" className="input py-1.5" value={h.break_end} onChange={(e) => set(i, { break_end: e.target.value })} /></div>
+                  <div className="col-span-2 flex items-center gap-2 md:col-span-1"><span className="w-12 shrink-0 text-xs muted">Hours</span><input type="time" className="input min-w-0 flex-1 px-2 py-1.5" value={h.start_time} onChange={(e) => set(i, { start_time: e.target.value })} /><span>–</span><input type="time" className="input min-w-0 flex-1 px-2 py-1.5" value={h.end_time} onChange={(e) => set(i, { end_time: e.target.value })} /></div>
+                  <div className="col-span-2 flex items-center gap-2 md:col-span-1"><span className="w-12 shrink-0 text-xs muted">Break</span><input type="time" className="input min-w-0 flex-1 px-2 py-1.5" value={h.break_start} onChange={(e) => set(i, { break_start: e.target.value })} /><span>–</span><input type="time" className="input min-w-0 flex-1 px-2 py-1.5" value={h.break_end} onChange={(e) => set(i, { break_end: e.target.value })} /></div>
                 </>}
               </div>
             ))}

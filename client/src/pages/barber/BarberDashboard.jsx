@@ -40,7 +40,7 @@ export default function BarberDashboard() {
         <div className="lg:col-span-2">
           <h2 className="mb-3 text-xl font-bold">Today's schedule</h2>
           {data.today.length === 0 ? <EmptyState title="No appointments today" text="Enjoy the downtime — or take walk-ins!" /> : (
-            <div className="relative space-y-3 border-l-2 border-brass-400/30 pl-5">
+            <div className="relative min-w-0 space-y-3 border-l-2 border-brass-400/30 pl-4 sm:pl-5">
               {data.today.map((a) => (
                 <div key={a.id} className="relative">
                   <span className="absolute -left-[27px] top-6 h-3 w-3 rounded-full bg-brass-400 ring-4 ring-cream dark:ring-ink-950" />

@@ -84,6 +84,20 @@ async function notifyWaitlist(appt) {
 
 const broadcastSlots = (barberId) => emit(`barber:${barberId}`, 'slots:changed', { barberId });
 
+/** Give a coupon use back when its booking is cancelled or declined (so single-use codes aren't lost). */
+async function releaseCoupon(db, appointmentId) {
+  const { rows } = await db.query('DELETE FROM coupon_redemptions WHERE appointment_id = $1 RETURNING coupon_id', [appointmentId]);
+  for (const r of rows) await db.query('UPDATE coupons SET used_count = GREATEST(used_count - 1, 0) WHERE id = $1', [r.coupon_id]);
+}
+
+/** Refund every online (card / gift card) payment on an appointment; void pending cash. Returns true if money was refunded. */
+async function refundAppointment(appointmentId, reason) {
+  const paid = await many("SELECT id FROM payments WHERE appointment_id = $1 AND status IN ('paid','partially_refunded') AND method <> 'cash'", [appointmentId]);
+  for (const p of paid) await refundPayment(p.id, undefined, reason);
+  await query("UPDATE payments SET status = 'failed', refund_reason = $2 WHERE appointment_id = $1 AND method = 'cash' AND status = 'pending'", [appointmentId, reason]);
+  return paid.length > 0;
+}
+
 // ------------------------------------------------------------------ quote
 const quoteSchema = z.object({
   barberId: uuid,
@@ -248,6 +262,14 @@ router.post('/walk-in', authenticate, authorize('barber', 'admin'), validate({
   const barber = await getBarberContext(barberId);
   // Walk-ins start now (rounded up to 5 min) unless a time is given; the DB constraint still blocks overlaps.
   const start = req.body.startAt ? dayjs(req.body.startAt) : dayjs().add(5 - (dayjs().minute() % 5), 'minute').second(0).millisecond(0);
+  // Walk-ins happen now: allow a start from 15 minutes ago to 2 hours ahead, on today's date in the shop
+  if (start.isBefore(dayjs().subtract(15, 'minute')) || start.isAfter(dayjs().add(2, 'hour'))) {
+    throw ApiError.badRequest('Walk-ins must start now or within the next 2 hours. Use a normal booking for later times.');
+  }
+  const busy = await one(
+    `SELECT 1 FROM appointments WHERE barber_id = $1 AND status IN ('pending','confirmed','checked_in','in_progress')
+       AND start_at < $3 AND end_at > $2`, [barberId, start.toDate(), start.add(q.durationMin, 'minute').toDate()]);
+  if (busy) throw ApiError.conflict(`The chair is busy until the current appointment ends. Add this customer to the walk-in queue instead.`);
   const id = await withTransaction(async (c) => {
     const { rows: [a] } = await c.query(
       `INSERT INTO appointments (customer_id, guest_name, guest_phone, barber_id, location_id, start_at, end_at, status, source,
@@ -278,7 +300,10 @@ router.post('/guest/cancel', heavyLimiter, validate({ body: z.object({ code: z.s
     const appt = await one(`${APPT_SELECT} WHERE a.checkin_code = $1 AND lower(a.guest_email) = $2`, [req.body.code, req.body.email]);
     if (!appt) throw ApiError.notFound('No booking found for that code and email');
     if (!['pending', 'confirmed'].includes(appt.status)) throw ApiError.badRequest(`Appointment is already ${appt.status}`);
-    await query("UPDATE appointments SET status = 'cancelled', cancellation_reason = 'Cancelled by guest', updated_at = now() WHERE id = $1", [appt.id]);
+    await withTransaction(async (c) => {
+      await c.query("UPDATE appointments SET status = 'cancelled', cancellation_reason = 'Cancelled by guest', updated_at = now() WHERE id = $1", [appt.id]);
+      await releaseCoupon(c, appt.id);
+    });
     broadcastSlots(appt.barber_id);
     notifyWaitlist(appt);
     res.json({ appointment: await getAppointment(appt.id) });
@@ -350,14 +375,11 @@ router.patch('/:id/cancel', authenticate, validate({ params: idParam, body: z.ob
       if (appt.points_redeemed && !lateCancel) {
         await adjustPoints(c, { userId: appt.customer_id, points: appt.points_redeemed, reason: 'Points restored (cancellation)', appointmentId: appt.id });
       }
+      if (!lateCancel) await releaseCoupon(c, appt.id);
     });
 
     // Refund online payments (late customer cancellations are not auto-refunded per policy)
-    let refunded = false;
-    if (!lateCancel) {
-      const paid = await many("SELECT id FROM payments WHERE appointment_id = $1 AND status IN ('paid','partially_refunded') AND method <> 'cash'", [appt.id]);
-      for (const p of paid) { await refundPayment(p.id, undefined, 'Appointment cancelled'); refunded = true; }
-    }
+    const refunded = lateCancel ? false : await refundAppointment(appt.id, 'Appointment cancelled');
     const who = req.user.role === 'customer' ? 'You' : req.user.role === 'barber' ? 'Your barber' : 'The shop';
     await notifyCustomer(appt, 'cancelled', 'Appointment cancelled',
       `${who} cancelled the appointment on ${fmtWhen(appt)}.${refunded ? ' A refund has been issued to your original payment method.' : ''}`);
@@ -386,6 +408,13 @@ router.patch('/:id/status', authenticate, authorize('barber', 'admin'), validate
   if (!appt || !canAccess(req.user, appt)) throw ApiError.notFound('Appointment not found');
   const next = req.body.status;
   if (!TRANSITIONS[appt.status]?.includes(next)) throw ApiError.badRequest(`Cannot change ${appt.status} → ${next}`);
+  // Guard against accidentally starting/completing a booking long before it begins (which would book revenue early)
+  const minutesUntil = dayjs(appt.start_at).diff(dayjs(), 'minute');
+  if (['in_progress', 'completed'].includes(next) && minutesUntil > 60) {
+    throw ApiError.badRequest('This appointment starts later. You can start or complete it from 1 hour before its start time.');
+  }
+  if (next === 'checked_in' && minutesUntil > 120) throw ApiError.badRequest('Check-in opens 2 hours before the appointment');
+  if (next === 'no_show' && minutesUntil > 0) throw ApiError.badRequest('An appointment can only be marked no-show after its start time');
 
   const settings = await getSettings();
   await withTransaction(async (c) => {
@@ -395,8 +424,11 @@ router.patch('/:id/status', authenticate, authorize('barber', 'admin'), validate
               cancellation_reason = CASE WHEN $2::text = 'rejected' THEN $3 ELSE cancellation_reason END
         WHERE id = $1`, [appt.id, next, req.body.reason || null]);
 
-    if (next === 'rejected' && appt.points_redeemed) {
-      await adjustPoints(c, { userId: appt.customer_id, points: appt.points_redeemed, reason: 'Points restored (booking declined)', appointmentId: appt.id });
+    if (next === 'rejected') {
+      if (appt.points_redeemed) {
+        await adjustPoints(c, { userId: appt.customer_id, points: appt.points_redeemed, reason: 'Points restored (booking declined)', appointmentId: appt.id });
+      }
+      await releaseCoupon(c, appt.id);
     }
 
     if (next === 'completed') {
@@ -421,10 +453,13 @@ router.patch('/:id/status', authenticate, authorize('barber', 'admin'), validate
     }
   });
 
+  // A declined booking may already have been paid online — always refund it in full
+  const refunded = next === 'rejected' ? await refundAppointment(appt.id, 'Booking declined by barber') : false;
+
   const updated = await getAppointment(appt.id);
   const messages = {
     confirmed: ['booking_confirmed', 'Booking confirmed ✂', `${updated.barber_name} confirmed your appointment on ${fmtWhen(updated)}. Check-in code: ${updated.checkin_code}.`],
-    rejected: ['booking_rejected', 'Booking declined', `Unfortunately ${updated.barber_name} can't take your appointment on ${fmtWhen(updated)}.${req.body.reason ? ` Reason: ${req.body.reason}` : ''} Please choose another time.`],
+    rejected: ['booking_rejected', 'Booking declined', `Unfortunately ${updated.barber_name} can't take your appointment on ${fmtWhen(updated)}.${req.body.reason ? ` Reason: ${req.body.reason}` : ''} Please choose another time.${refunded ? ' Your payment has been refunded in full.' : ''}`],
     completed: ['completed', 'Thanks for visiting!', 'Hope you love the fresh cut. Leave a review to earn bonus loyalty points!'],
     no_show: ['no_show', 'We missed you', `You were marked as a no-show for ${fmtWhen(updated)}. Need to rebook?`],
   };

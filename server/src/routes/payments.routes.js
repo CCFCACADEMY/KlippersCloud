@@ -78,7 +78,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
 router.get('/:id/invoice', authenticate, validate({ params: idParam }), asyncHandler(async (req, res) => {
   const p = await one(
     `SELECT p.*, a.start_at, a.subtotal, a.discount, a.barber_id, COALESCE(u.name, a.guest_name) AS customer_name,
-            COALESCE(u.email, a.guest_email) AS customer_email, bu.name AS barber_name, l.name AS location_name, l.address
+            COALESCE(u.email, a.guest_email) AS customer_email, bu.name AS barber_name, l.name AS location_name, l.address, l.timezone
        FROM payments p LEFT JOIN appointments a ON a.id = p.appointment_id LEFT JOIN users u ON u.id = p.user_id
        LEFT JOIN barbers b ON b.id = a.barber_id LEFT JOIN users bu ON bu.id = b.user_id
        LEFT JOIN locations l ON l.id = a.location_id WHERE p.id = $1`, [req.params.id]);
@@ -96,9 +96,9 @@ td:last-child,th:last-child{text-align:right}.total{font-size:20px;font-weight:7
 @media print{button{display:none}}</style></head><body>
 <div class="row"><div><h1>✂ ${esc(s.business_name)}</h1><div class="muted">${esc(p.location_name || '')} ${esc(p.address || '')}</div></div>
 <div style="text-align:right"><div class="badge">${esc(p.status)}</div><div>Invoice <b>${esc(p.invoice_number)}</b></div>
-<div class="muted">${dayjs(p.paid_at || p.created_at).format('MMM D, YYYY')}</div></div></div>
+<div class="muted">${dayjs(p.paid_at || p.created_at).tz(p.timezone || s.default_timezone).format('MMM D, YYYY')}</div></div></div>
 <p><b>Billed to:</b> ${esc(p.customer_name || '—')}<br><span class="muted">${esc(p.customer_email || '')}</span></p>
-${p.start_at ? `<p><b>Appointment:</b> ${dayjs(p.start_at).format('ddd, MMM D YYYY h:mm A')} with ${esc(p.barber_name)}</p>` : ''}
+${p.start_at ? `<p><b>Appointment:</b> ${dayjs(p.start_at).tz(p.timezone || s.default_timezone).format('ddd, MMM D YYYY h:mm A')} with ${esc(p.barber_name)}</p>` : ''}
 <table><tr><th>Item</th><th>Amount</th></tr>${items.map((i) => `<tr><td>${esc(i.name)}</td><td>${$(i.price)}</td></tr>`).join('')}
 ${p.discount ? `<tr><td>Discounts</td><td>−${$(p.discount)}</td></tr>` : ''}
 <tr><td>GST (${s.tax_rate}%)</td><td>${$(p.tax)}</td></tr>

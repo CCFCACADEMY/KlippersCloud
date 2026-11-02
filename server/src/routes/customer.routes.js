@@ -13,6 +13,7 @@ import { adjustPoints, tierFor } from '../services/loyalty.service.js';
 import { getSettings } from '../services/settings.service.js';
 import { activeMembership } from '../services/pricing.service.js';
 import { APPT_SELECT } from './appointments.routes.js';
+import { dayjs } from '../utils/time.js';
 
 const router = Router();
 
@@ -26,16 +27,18 @@ router.get('/dashboard', authenticate, authorize('customer'), asyncHandler(async
   const uid = req.user.id;
   const [upcoming, past, favorites, user, membership] = await Promise.all([
     many(`${APPT_SELECT} WHERE a.customer_id = $1 AND a.start_at >= now() AND a.status IN ('pending','confirmed','checked_in') ORDER BY a.start_at LIMIT 5`, [uid]),
-    many(`${APPT_SELECT} WHERE a.customer_id = $1 AND (a.start_at < now() OR a.status IN ('completed','cancelled','rejected','no_show')) ORDER BY a.start_at DESC LIMIT 5`, [uid]),
+    many(`${APPT_SELECT} WHERE a.customer_id = $1 AND a.start_at < now() ORDER BY a.start_at DESC LIMIT 5`, [uid]),
     many(`SELECT b.id, u.name, b.title, COALESCE(b.photo_url, u.avatar_url) AS photo_url, b.rating_avg, b.specialties
             FROM favorites f JOIN barbers b ON b.id = f.barber_id JOIN users u ON u.id = b.user_id WHERE f.user_id = $1`, [uid]),
-    one(`SELECT loyalty_points, (SELECT COALESCE(sum(points),0)::int FROM loyalty_transactions WHERE user_id = $1 AND points > 0) AS lifetime,
-                (SELECT count(*)::int FROM appointments WHERE customer_id = $1 AND status = 'completed') AS visits
+    one(`SELECT loyalty_points, (SELECT COALESCE(sum(points),0)::int FROM loyalty_transactions WHERE user_id = $1 AND points > 0 AND reason NOT LIKE 'Points restored%') AS lifetime,
+                (SELECT count(*)::int FROM appointments WHERE customer_id = $1 AND status = 'completed') AS visits,
+             (SELECT count(*)::int FROM appointments WHERE customer_id = $1 AND start_at >= now() AND status IN ('pending','confirmed','checked_in')) AS upcoming_count
            FROM users WHERE id = $1`, [uid]),
     activeMembership(uid),
   ]);
   const { loyalty_redeem_rate: rate } = await getSettings();
   res.json({ upcoming, past, favorites, membership,
+    upcomingCount: user.upcoming_count,
     rewards: { points: user.loyalty_points, lifetime: user.lifetime, visits: user.visits, tier: tierFor(user.lifetime), cashValue: Math.round(user.loyalty_points * rate * 100) / 100 } });
 }));
 
@@ -46,6 +49,7 @@ router.post('/reviews', authenticate, authorize('customer'), validate({
   const appt = await one('SELECT * FROM appointments WHERE id = $1 AND customer_id = $2', [req.body.appointmentId, req.user.id]);
   if (!appt) throw ApiError.notFound('Appointment not found');
   if (appt.status !== 'completed') throw ApiError.badRequest('You can review an appointment once it is completed');
+  if (await one('SELECT 1 FROM reviews WHERE appointment_id = $1', [appt.id])) throw ApiError.conflict('You have already reviewed this appointment');
   const settings = await getSettings();
   const review = await withTransaction(async (c) => {
     const { rows: [r] } = await c.query(
@@ -108,7 +112,7 @@ router.delete('/favorites/:id', authenticate, validate({ params: idParam }), asy
 // ------------------------------------------------------------ loyalty
 router.get('/loyalty', authenticate, asyncHandler(async (req, res) => {
   const s = await getSettings();
-  const u = await one(`SELECT loyalty_points, (SELECT COALESCE(sum(points),0)::int FROM loyalty_transactions WHERE user_id = $1 AND points > 0) AS lifetime FROM users WHERE id = $1`, [req.user.id]);
+  const u = await one(`SELECT loyalty_points, (SELECT COALESCE(sum(points),0)::int FROM loyalty_transactions WHERE user_id = $1 AND points > 0 AND reason NOT LIKE 'Points restored%') AS lifetime FROM users WHERE id = $1`, [req.user.id]);
   const history = await many('SELECT * FROM loyalty_transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100', [req.user.id]);
   res.json({
     points: u.loyalty_points, lifetime: u.lifetime, tier: tierFor(u.lifetime), history,
@@ -138,6 +142,8 @@ router.patch('/notifications/:id/read', authenticate, validate({ params: idParam
 router.post('/waitlist', authenticate, authorize('customer'), validate({
   body: z.object({ barberId: uuid.optional().nullable(), serviceId: uuid, desiredDate: dateStr }),
 }), asyncHandler(async (req, res) => {
+  const today = dayjs().tz((await getSettings()).default_timezone).format('YYYY-MM-DD');
+  if (req.body.desiredDate < today) throw ApiError.badRequest('Choose today or a future date for the waiting list');
   const dup = await one("SELECT id FROM waitlist WHERE customer_id = $1 AND desired_date = $2 AND status = 'waiting'", [req.user.id, req.body.desiredDate]);
   if (dup) throw ApiError.conflict('You are already on the waiting list for that day');
   res.status(201).json({ entry: await one(

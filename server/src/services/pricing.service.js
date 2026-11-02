@@ -69,7 +69,8 @@ export async function quote({ barberId, serviceIds, couponCode, userId, redeemPo
   let coupon = null;
   let couponDiscount = 0;
   if (couponCode) {
-    coupon = await validateCoupon(couponCode, userId, running);
+    // Minimum spend is judged on the bill before other discounts (what the customer sees as their subtotal)
+    coupon = await validateCoupon(couponCode, userId, subtotal);
     couponDiscount = coupon.discount_type === 'percent'
       ? money(running * (Number(coupon.discount_value) / 100))
       : Math.min(Number(coupon.discount_value), running);

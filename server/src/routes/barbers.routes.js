@@ -71,7 +71,7 @@ me.put('/hours', validate({
   }),
 }), asyncHandler(async (req, res) => {
   for (const h of req.body.hours) {
-    if (!h.is_off && h.end_time <= h.start_time) throw ApiError.badRequest(`End time must be after start time (day ${h.day_of_week})`);
+    if (!h.is_off && h.end_time <= h.start_time) throw ApiError.badRequest(`${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][h.day_of_week]}: end time must be after start time`);
     if ((h.break_start && !h.break_end) || (h.break_start && h.break_end <= h.break_start)) throw ApiError.badRequest('Invalid break time');
   }
   await withTransaction(async (c) => {
@@ -178,14 +178,22 @@ me.get('/dashboard', asyncHandler(async (req, res) => {
 // Customers this barber has served
 me.get('/customers', asyncHandler(async (req, res) => {
   res.json({ customers: await many(
-    `SELECT u.id, u.name, u.email, u.phone, count(a.id)::int AS visits, max(a.start_at) AS last_visit,
-            COALESCE(sum(a.total) FILTER (WHERE a.status = 'completed'), 0) AS spent
+    // visits/spent count completed visits only (spent excludes tax, matching the dashboard); next_visit is the next booking
+    `SELECT u.id, u.name, u.email, u.phone,
+            count(a.id) FILTER (WHERE a.status = 'completed')::int AS visits,
+            max(a.start_at) FILTER (WHERE a.status = 'completed') AS last_visit,
+            min(a.start_at) FILTER (WHERE a.start_at >= now() AND a.status IN ('pending','confirmed','checked_in')) AS next_visit,
+            COALESCE(sum(a.total - a.tax) FILTER (WHERE a.status = 'completed'), 0) AS spent
        FROM appointments a JOIN users u ON u.id = a.customer_id
-      WHERE a.barber_id = $1 GROUP BY u.id ORDER BY last_visit DESC`, [req.user.barber_id]) });
+      WHERE a.barber_id = $1 GROUP BY u.id ORDER BY last_visit DESC NULLS LAST, u.name`, [req.user.barber_id]) });
 }));
 
 me.get('/customers/:id', validate({ params: idParam }), asyncHandler(async (req, res) => {
-  const customer = await one('SELECT id, name, email, phone, created_at FROM users WHERE id = $1', [req.params.id]);
+  // Barbers may only see people who have booked with them
+  const customer = await one(
+    `SELECT u.id, u.name, u.email, u.phone, u.created_at FROM users u
+      WHERE u.id = $1 AND EXISTS (SELECT 1 FROM appointments a WHERE a.customer_id = u.id AND a.barber_id = $2)`,
+    [req.params.id, req.user.barber_id]);
   if (!customer) throw ApiError.notFound('Customer not found');
   const [history, notes] = await Promise.all([
     many(`SELECT a.id, a.start_at, a.status, a.total, a.notes,
@@ -198,6 +206,8 @@ me.get('/customers/:id', validate({ params: idParam }), asyncHandler(async (req,
 
 me.post('/customers/:id/notes', validate({ params: idParam, body: z.object({ note: z.string().min(1).max(2000) }) }),
   asyncHandler(async (req, res) => {
+    const isCustomer = await one('SELECT 1 FROM appointments WHERE customer_id = $1 AND barber_id = $2 LIMIT 1', [req.params.id, req.user.barber_id]);
+    if (!isCustomer) throw ApiError.notFound('Customer not found');
     res.status(201).json({ note: await one(
       'INSERT INTO customer_notes (barber_id, customer_id, note) VALUES ($1,$2,$3) RETURNING *',
       [req.user.barber_id, req.params.id, req.body.note]) });

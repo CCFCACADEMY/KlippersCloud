@@ -9,13 +9,15 @@ import { useFetch } from '../../hooks/useFetch';
 import { ago } from '../../lib/format';
 import { Badge, Button, Card, EmptyState, PageHeader, Select } from '../../components/ui';
 import WalkInModal from '../../components/appointments/WalkInModal';
+import { useAuth } from '../../context/AuthContext';
 
 export default function StaffQueue() {
   const { data: loc } = useFetch('/locations');
   const [locationId, setLocationId] = useState('');
   const [queue, setQueue] = useState([]);
   const [walkIn, setWalkIn] = useState(null);
-  useEffect(() => { if (loc && !locationId) setLocationId(loc.locations[0]?.id); }, [loc, locationId]);
+  const { user } = useAuth();
+  useEffect(() => { if (loc && !locationId) setLocationId(user?.location_id || loc.locations[0]?.id); }, [loc, locationId, user]);
   const load = useCallback(() => locationId && api.get('/queue', { params: { locationId } }).then((r) => setQueue(r.data.queue)), [locationId]);
   useEffect(() => {
     if (!locationId) return;
@@ -32,7 +34,7 @@ export default function StaffQueue() {
   return (
     <>
       <PageHeader title="Walk-ins & queue" subtitle="Live lobby queue. Customers can join from /queue on their phone."
-        actions={<><Select value={locationId} onChange={(e) => setLocationId(e.target.value)}>{loc?.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
+        actions={<><Select aria-label="Choose location" value={locationId} onChange={(e) => setLocationId(e.target.value)}>{loc?.locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
           <Button onClick={() => setWalkIn({})}><Plus className="h-4 w-4" />Walk-in</Button><Link to="/queue" target="_blank" className="btn-secondary">Lobby display</Link></>} />
       <Card className="p-4">
         {queue.length === 0 ? <EmptyState title="Queue is empty" /> : (

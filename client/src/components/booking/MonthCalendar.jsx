@@ -23,7 +23,9 @@ export default function MonthCalendar({ month, onMonthChange, selected, onSelect
         {days.map((day) => {
           const key = format(day, 'yyyy-MM-dd');
           const open = availability[key];
-          const disabled = isBefore(day, today) || !isSameMonth(day, month) || (maxDate && day > maxDate) || open === 0;
+          // Fully booked / day-off dates stay clickable so customers can join the waiting list
+          const disabled = isBefore(day, today) || !isSameMonth(day, month) || (maxDate && day > maxDate);
+          const full = open === 0;
           const isSel = selected && isSameDay(day, selected);
           return (
             <button key={key} disabled={disabled} onClick={() => onSelect(day)}
@@ -31,14 +33,16 @@ export default function MonthCalendar({ month, onMonthChange, selected, onSelect
                 !isSameMonth(day, month) && 'invisible',
                 isSel ? 'bg-brass-400 text-ink-900 shadow-glow' : 'hover:bg-black/5 dark:hover:bg-white/10',
                 disabled && !isSel && 'cursor-not-allowed opacity-30 hover:bg-transparent',
-                isSameDay(day, today) && !isSel && 'ring-1 ring-brass-400/60')}>
+                full && !isSel && !disabled && 'text-black/30 line-through dark:text-white/30',
+                isSameDay(day, today) && !isSel && 'ring-1 ring-brass-400/60')}
+              aria-label={`${format(day, 'EEEE, MMMM d')}${full ? ' — fully booked' : open ? ` — ${open} open slots` : ''}`}>
               {format(day, 'd')}
               {open > 0 && !isSel && <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-emerald-500" />}
             </button>
           );
         })}
       </div>
-      <p className="mt-3 flex items-center gap-2 text-xs muted"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Has open slots</p>
+      <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs muted"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Has open slots</span><span><span className="line-through">12</span> Full or closed: tap to join the waiting list</span></p>
     </div>
   );
 }

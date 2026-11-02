@@ -9,11 +9,12 @@ import { useAuth } from '../../context/AuthContext';
 import { Card, EmptyState, PageLoader, Select, Stars, cn } from '../../components/ui';
 
 export default function Barbers() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const [search, setSearch] = useState('');
   const [locationId, setLocationId] = useState('');
   const [sort, setSort] = useState('rating');
-  const { data, setData } = useFetch('/barbers', { params: { search: search || undefined, locationId: locationId || undefined, sort } });
+  // Wait for the silent sign-in so the favourite hearts reflect the signed-in user
+  const { data, setData } = useFetch(ready ? '/barbers' : null, { params: { search: search || undefined, locationId: locationId || undefined, sort } }, [user?.id]);
   const { data: loc } = useFetch('/locations');
 
   const toggleFav = async (b) => {

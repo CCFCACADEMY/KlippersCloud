@@ -4,7 +4,7 @@
  * on a time grid (day/week) or as chips (month). Clicking an event opens the
  * full appointment card with staff actions. Live-refreshes via Socket.IO.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addDays, addMonths, addWeeks, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth,
   isToday, startOfDay, startOfMonth, startOfWeek, differenceInMinutes,
@@ -30,7 +30,8 @@ const EVENT_COLORS = {
 };
 
 export default function CalendarView({ barberId, role = 'barber', defaultView = 'week' }) {
-  const [view, setView] = useState(defaultView);
+  // Day view suits phones; week/month need the width
+  const [view, setView] = useState(() => (typeof window !== 'undefined' && window.innerWidth < 640 ? 'day' : defaultView));
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -41,11 +42,14 @@ export default function CalendarView({ barberId, role = 'barber', defaultView = 
     return [startOfWeek(startOfMonth(cursor)), addDays(endOfWeek(endOfMonth(cursor)), 1)];
   }, [view, cursor]);
 
+  // Ignore responses from older requests (fast view switching could otherwise show stale events)
+  const latest = useRef(0);
   const load = useCallback(async () => {
+    const reqId = ++latest.current;
     const { data } = await api.get('/appointments/calendar', {
       params: { from: range[0].toISOString(), to: range[1].toISOString(), barberId: barberId || undefined },
     });
-    setEvents(data.events);
+    if (reqId === latest.current) setEvents(data.events);
   }, [range, barberId]);
 
   useEffect(() => { load(); }, [load]);

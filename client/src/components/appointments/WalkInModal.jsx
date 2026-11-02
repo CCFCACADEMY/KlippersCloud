@@ -8,10 +8,12 @@ import { Button, Field, Input, Modal, Select } from '../ui';
 
 export default function WalkInModal({ open, onClose, onDone, defaults = {} }) {
   const { user } = useAuth();
-  const { data: svc } = useFetch(open ? '/services' : null);
   const { data: barbers } = useFetch(open && user.role === 'admin' ? '/barbers' : null);
   const [form, setForm] = useState({ name: defaults.name || '', phone: defaults.phone || '', serviceId: defaults.serviceId || '', barberId: '' });
   const [busy, setBusy] = useState(false);
+  // Services offered by the barber doing the walk-in (their own prices/durations)
+  const svcBarberId = user.role === 'barber' ? user.barber_id : form.barberId;
+  const { data: svc } = useFetch(open && svcBarberId ? `/barbers/${svcBarberId}` : null);
   const submit = async (e) => {
     e.preventDefault(); setBusy(true);
     try {
@@ -25,8 +27,8 @@ export default function WalkInModal({ open, onClose, onDone, defaults = {} }) {
         <Field label="Customer name"><Input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Phone (optional)"><Input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
         <Field label="Service"><Select required value={form.serviceId} onChange={(e) => setForm({ ...form, serviceId: e.target.value })}>
-          <option value="">Select…</option>{svc?.services.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.duration_min}m)</option>)}</Select></Field>
-        {user.role === 'admin' && <Field label="Barber"><Select required value={form.barberId} onChange={(e) => setForm({ ...form, barberId: e.target.value })}>
+          <option value="">{svcBarberId ? 'Select…' : 'Choose a barber first'}</option>{svc?.services.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.duration_min}m)</option>)}</Select></Field>
+        {user.role === 'admin' && <Field label="Barber"><Select required value={form.barberId} onChange={(e) => setForm({ ...form, barberId: e.target.value, serviceId: '' })}>
           <option value="">Select…</option>{barbers?.barbers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></Field>}
         <p className="text-xs muted">Starts now (next 5-minute mark). If the chair is busy you'll get a conflict — use the queue instead.</p>
         <Button type="submit" className="w-full" loading={busy}>Add & check in</Button>

@@ -157,6 +157,8 @@ test('barber accept/reject workflow, completion awards points, review', async ()
   assert.equal((await api().patch(`/api/appointments/${id}/status`).set(auth(vikramToken)).send({ status: 'completed' })).status, 400);
 
   assert.equal((await api().patch(`/api/appointments/${id}/status`).set(auth(vikramToken)).send({ status: 'confirmed' })).body.appointment.status, 'confirmed');
+  // Completing is only allowed from 1h before start: move this test booking into the recent past
+  await pool.query("UPDATE appointments SET start_at = now() - interval '40 minutes', end_at = now() - interval '10 minutes' WHERE id = $1", [id]);
   const before = (await api().get('/api/me/loyalty').set(auth(tokens.customer))).body.points;
   const done = await api().patch(`/api/appointments/${id}/status`).set(auth(vikramToken)).send({ status: 'completed' });
   assert.equal(done.body.appointment.status, 'completed');
@@ -235,6 +237,33 @@ test('walk-in queue, AI recommendations, WhatsApp bot, gift card payment', async
 test('reminder job runs', async () => {
   const r = await runMaintenance();
   assert.ok(typeof r.sent24h === 'number');
+});
+
+test('barber privacy: cannot read people who never booked with them', async () => {
+  const stranger = (await api().post('/api/auth/register').send({ name: 'Never Booked', email: 'never@example.com', password: 'Secret123' })).body.user;
+  assert.equal((await api().get(`/api/barbers/me/customers/${stranger.id}`).set(auth(tokens.barber))).status, 404);
+  assert.equal((await api().post(`/api/barbers/me/customers/${stranger.id}/notes`).set(auth(tokens.barber)).send({ note: 'x' })).status, 404);
+});
+
+test('cancelling releases a single-use coupon; declining refunds a paid booking', async () => {
+  const startAt = await firstOpenSlot(barber.id, [services[0].id], 15);
+  const a = (await api().post('/api/appointments').set(auth(tokens.customer)).send({ barberId: barber.id, serviceIds: [services[0].id], startAt, couponCode: 'WELCOME10' })).body.appointment;
+  assert.ok(a, 'booking with WELCOME10 succeeded');
+  await api().patch(`/api/appointments/${a.id}/cancel`).set(auth(tokens.customer)).send({});
+  const again = await api().post('/api/appointments/quote').set(auth(tokens.customer)).send({ barberId: barber.id, serviceIds: [services[0].id], couponCode: 'WELCOME10' });
+  assert.equal(again.status, 200, 'coupon usable again after cancellation');
+
+  const vikram = (await api().get('/api/barbers').query({ search: 'Vikram' })).body.barbers[0];
+  const vSvc = (await api().get(`/api/barbers/${vikram.id}`)).body.services[0];
+  const slot = await firstOpenSlot(vikram.id, [vSvc.id], 2);
+  const p = (await api().post('/api/appointments').set(auth(tokens.customer)).send({ barberId: vikram.id, serviceIds: [vSvc.id], startAt: slot })).body.appointment;
+  assert.equal(p.status, 'pending');
+  await api().post(`/api/payments/appointments/${p.id}`).set(auth(tokens.customer)).send({ method: 'card' });
+  const vToken = await login('vikram@klippers.app');
+  assert.equal((await api().patch(`/api/appointments/${p.id}/status`).set(auth(vToken)).send({ status: 'completed' })).status, 400, 'cannot complete a future booking');
+  await api().patch(`/api/appointments/${p.id}/status`).set(auth(vToken)).send({ status: 'rejected', reason: 'Fully booked' });
+  const pays = (await api().get(`/api/appointments/${p.id}`).set(auth(tokens.customer))).body.payments;
+  assert.equal(pays[0].status, 'refunded');
 });
 
 test('admin: create barber with uploaded photo, edit full profile', async () => {

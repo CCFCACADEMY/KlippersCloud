@@ -130,7 +130,7 @@ export function QrModal({ appt, open, onClose }) {
   );
 }
 
-export function CancelModal({ appt, open, onClose, onDone }) {
+export function CancelModal({ appt, open, onClose, onDone, staff = false }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -143,7 +143,7 @@ export function CancelModal({ appt, open, onClose, onDone }) {
   };
   return (
     <Modal open={open} onClose={onClose} title="Cancel appointment?">
-      <p className="text-sm muted">{fmtDateTime(appt.start_at, appt.timezone)} with {appt.barber_name}. Cancellations within 4 hours of the appointment are not refunded.</p>
+      <p className="text-sm muted">{fmtDateTime(appt.start_at, appt.timezone)} with {appt.barber_name}. {staff ? 'The customer is notified and any online payment is refunded in full.' : 'Cancellations within 4 hours of the appointment are not refunded.'}</p>
       <Field label="Reason (optional)" className="mt-4"><Input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} /></Field>
       <div className="mt-5 flex gap-2"><Button variant="secondary" className="flex-1" onClick={onClose}>Keep it</Button><Button variant="danger" className="flex-1" loading={busy} onClick={submit}>Cancel appointment</Button></div>
     </Modal>

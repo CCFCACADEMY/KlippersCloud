@@ -31,7 +31,7 @@ export default function BarberCustomers() {
           <div className="max-h-[65vh] space-y-1 overflow-y-auto">
             {list.map((c) => (
               <button key={c.id} onClick={() => setSelected(c.id)} className={cn('flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition', selected === c.id ? 'bg-brass-400/15' : 'hover:bg-black/5 dark:hover:bg-white/5')}>
-                <Avatar name={c.name} size="sm" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{c.name}</p><p className="text-xs muted">{c.visits} visits · last {ago(c.last_visit)}</p></div>
+                <Avatar name={c.name} size="sm" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{c.name}</p><p className="text-xs muted">{c.visits} visit{c.visits === 1 ? '' : 's'}{c.last_visit ? ` · last ${ago(c.last_visit)}` : ''}{c.next_visit ? ` · next ${fmtDate(c.next_visit, 'MMM d')}` : ''}</p></div>
                 <span className="text-xs font-semibold">{money(c.spent)}</span>
               </button>
             ))}

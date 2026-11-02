@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Gift, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, errMsg } from '../../lib/api';
-import { money } from '../../lib/format';
+import { money, fmtDate } from '../../lib/format';
+import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Card, Field, Input, Textarea, cn } from '../../components/ui';
 
@@ -15,6 +16,7 @@ export default function GiftCards() {
   const [card, setCard] = useState(null);
   const [code, setCode] = useState('');
   const [balance, setBalance] = useState(null);
+  const { data: mine, reload: reloadMine } = useFetch(user ? '/gift-cards/mine' : null);
 
   const buy = async (e) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ export default function GiftCards() {
     try {
       const { data } = await api.post('/gift-cards/purchase', { ...form, amount: Number(form.amount) });
       setCard(data.giftCard);
+      reloadMine();
       toast.success('Gift card sent!');
     } catch (err) { toast.error(errMsg(err)); } finally { setBusy(false); }
   };
@@ -48,9 +51,20 @@ export default function GiftCards() {
         <Card className="mt-8 max-w-md p-5">
           <p className="font-semibold">Check a balance</p>
           <div className="mt-3 flex gap-2">
-            <Input aria-label="Gift card code" placeholder="GIFT-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+            <Input aria-label="Gift card code" placeholder="XXXX-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
             <Button variant="secondary" onClick={check} aria-label="Check balance"><Search className="h-4 w-4" /></Button>
           </div>
+          {mine?.giftCards.length > 0 && (
+            <div className="mt-4 border-t border-black/5 pt-4 dark:border-white/5">
+              <p className="label">Cards you've sent</p>
+              <ul className="space-y-1.5 text-sm">
+                {mine.giftCards.map((g) => (
+                  <li key={g.id} className="flex justify-between gap-2"><span><span className="font-mono">{g.code}</span> <span className="muted">→ {g.recipient_name}</span></span>
+                    <span>{money(g.balance)} <span className="muted">/ {money(g.initial_amount)} · exp {g.expires_at ? fmtDate(g.expires_at, 'MMM yyyy') : '—'}</span></span></li>
+                ))}
+              </ul>
+            </div>
+          )}
           {balance && <p className="mt-3 text-sm">Balance: <b>{money(balance.balance)}</b> of {money(balance.initial_amount)} {!balance.is_active && '(inactive)'}</p>}
         </Card>
       </div>

@@ -31,7 +31,7 @@ export async function publicUser(id) {
   return one(
     `SELECT u.id, u.role, u.name, u.email, u.phone, u.avatar_url, u.loyalty_points,
             u.notify_email, u.notify_sms, u.notify_push, u.created_at,
-            b.id AS barber_id, b.is_approved AS barber_approved
+            b.id AS barber_id, b.is_approved AS barber_approved, b.location_id
        FROM users u LEFT JOIN barbers b ON b.user_id = u.id WHERE u.id = $1`,
     [id],
   );
