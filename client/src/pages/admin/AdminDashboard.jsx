@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CalendarDays, DollarSign, Users, Scissors, Star, Clock } from 'lucide-react';
+import { CalendarDays, IndianRupee, Users, Scissors, Star, Clock } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch';
 import { money, fmtDateTime } from '../../lib/format';
 import { Badge, Card, PageHeader, PageLoader, StatCard, Table } from '../../components/ui';
@@ -14,7 +14,7 @@ export default function AdminDashboard() {
     <>
       <PageHeader title="Dashboard" subtitle="Business at a glance" actions={<Link to="/admin/reports" className="btn-secondary">Full reports</Link>} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Revenue · 30 days" value={money(k.revenue_30d)} icon={DollarSign} trend={trend} sub="vs previous 30 days" />
+        <StatCard label="Revenue · 30 days" value={money(k.revenue_30d)} icon={IndianRupee} trend={trend} sub="vs previous 30 days" />
         <StatCard label="Total bookings" value={k.total_bookings.toLocaleString()} icon={CalendarDays} sub={`${k.today_bookings} today`} />
         <StatCard label="Active customers" value={k.active_customers} icon={Users} sub={`of ${k.total_customers} · last 90 days`} />
         <StatCard label="Avg rating" value={Number(k.avg_rating).toFixed(2)} icon={Star} sub={`${k.active_barbers} active barbers`} />

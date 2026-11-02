@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CalendarCheck, DollarSign, Users, Repeat, AlertCircle } from 'lucide-react';
+import { CalendarCheck, IndianRupee, Users, Repeat, AlertCircle } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../context/AuthContext';
 import { money } from '../../lib/format';
@@ -22,8 +22,8 @@ export default function BarberDashboard() {
         actions={<Link to="/barber/calendar" className="btn-secondary">Open calendar</Link>} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Today" value={data.today.length} icon={CalendarCheck} sub="appointments" />
-        <StatCard label="Earnings (month)" value={money(stats.month_earnings)} icon={DollarSign} sub={`${stats.commission_rate}% commission`} />
-        <StatCard label="Lifetime earnings" value={money(stats.earnings)} icon={DollarSign} sub={`${stats.completed} cuts completed`} />
+        <StatCard label="Earnings (month)" value={money(stats.month_earnings)} icon={IndianRupee} sub={`${stats.commission_rate}% commission`} />
+        <StatCard label="Lifetime earnings" value={money(stats.earnings)} icon={IndianRupee} sub={`${stats.completed} cuts completed`} />
         <StatCard label="Repeat clients" value={`${stats.repeat_rate}%`} icon={Repeat} sub={`${stats.unique_customers} unique customers`} />
       </div>
 

@@ -139,7 +139,7 @@ await check('Availability & price quote', async () => {
   assert(slot, 'no open slot in the next 3 weeks');
   const q = await http('/api/appointments/quote', { method: 'POST', body: { barberId, serviceIds: [serviceId], couponCode: 'WELCOME10' } });
   assert(q.status === 200 && q.json.quote.total > 0, `quote → HTTP ${q.status}`);
-  return `slot ${slot}, total $${q.json.quote.total}`;
+  return `slot ${slot}, total ₹${q.json.quote.total}`;
 });
 
 let booking;
