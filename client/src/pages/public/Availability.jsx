@@ -65,6 +65,10 @@ export default function Availability() {
   const times = (data?.times || []).filter((t) => inPart(t.start));
   const freeBarbers = (data?.barbers || []).filter((b) => b.slots.some((s) => inPart(s.start)));
 
+  // Price range for the chosen service (senior barbers may charge more)
+  const prices = (data?.barbers || []).map((b) => b.price).filter((x) => x !== null);
+  const priceText = prices.length ? (Math.min(...prices) === Math.max(...prices) ? money(prices[0]) : `${money(Math.min(...prices))} – ${money(Math.max(...prices))} depending on barber`) : null;
+
   const book = (barberId, start) => navigate(`/book?service=${serviceId}&barber=${barberId}&date=${dateStr}&start=${encodeURIComponent(start)}`);
   const days = Array.from({ length: DAYS_AHEAD }, (_, i) => addDays(today, i));
 
@@ -115,7 +119,8 @@ export default function Availability() {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs value={part} onChange={setPart} tabs={[{ value: 'all', label: 'All day' }, { value: 'morning', label: 'Morning' }, { value: 'afternoon', label: 'Afternoon' }, { value: 'evening', label: 'Evening' }]} />
         {data && (
-          <p className="flex items-center gap-4 text-sm muted">
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm muted">
+            {service && priceText && <span className="flex items-center gap-1.5"><Scissors className="h-4 w-4" />{service.name}: {priceText}</span>}
             <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" />{times.length} open times</span>
             <span className="flex items-center gap-1.5"><Users className="h-4 w-4" />{freeBarbers.length} barbers free</span>
           </p>
@@ -142,7 +147,6 @@ export default function Availability() {
                           className="group flex items-center gap-2 rounded-full border border-black/10 py-1 pl-1 pr-3 text-sm transition hover:border-brass-400 hover:bg-brass-400/10 dark:border-white/10">
                           <Avatar src={b.photo_url} name={b.name} size="sm" />
                           <span className="font-semibold">{b.name}</span>
-                          {b.price !== null && <span className="muted">{money(b.price)}</span>}
                         </button>
                       );
                     })}
@@ -165,7 +169,7 @@ export default function Availability() {
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs muted">
                         <span className="flex items-center gap-1"><Stars value={b.rating_avg} size={10} />{Number(b.rating_avg).toFixed(1)}</span>
                         {b.location_name && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{b.location_name}</span>}
-                        {b.price !== null && <span className="flex items-center gap-1"><Scissors className="h-3 w-3" />{money(b.price)} · {b.duration_min} min</span>}
+                        {b.price !== null && <span className="flex items-center gap-1"><Scissors className="h-3 w-3" />{service?.name}: {money(b.price)} · {b.duration_min} min</span>}
                       </div>
                     </div>
                   </div>
@@ -185,7 +189,7 @@ export default function Availability() {
           </div>
         )}
       </div>
-      {service && data && <p className="mt-6 text-center text-xs muted">Times are shown in shop time. Prices are for {service.name} with each barber.</p>}
+      {service && data && <p className="mt-6 text-center text-xs muted">Times are shown in shop time.</p>}
     </div>
   );
 }
