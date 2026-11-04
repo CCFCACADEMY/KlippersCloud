@@ -330,3 +330,25 @@ test('availability overview: all barbers and their open slots for a day', async 
   assert.ok(c.body.barbers.every((b) => b.name !== 'Arjun Mehta') || !col);
   assert.equal((await api().get('/api/barbers/availability').query({ date: 'tomorrow' })).status, 400);
 });
+
+test('style advisor: photo input, preferences, validation and fallback', async () => {
+  const tinyJpeg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==';
+  const cfg = await api().get('/api/ai/config');
+  assert.equal(typeof cfg.body.photoAnalysis, 'boolean');
+  // Photo only (no questionnaire) is accepted; without an API key the rule-based stylist answers and says so
+  const r = await api().post('/api/ai/recommendations').send({ photo: tinyJpeg, vibe: 'trending', lengthChange: 'shorter' });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.result.recommendations.length, 3);
+  assert.ok(r.body.result.analysis && r.body.result.recommendations[0].trend_note);
+  if (!cfg.body.photoAnalysis) assert.match(r.body.result.analysis.observations, /not available/);
+  // Neither photo nor questionnaire → friendly 400
+  const none = await api().post('/api/ai/recommendations').send({ vibe: 'classic' });
+  assert.equal(none.status, 400);
+  assert.match(none.body.error.message, /Take a photo/);
+  // Non-image data is rejected
+  const bad = await api().post('/api/ai/recommendations').send({ photo: 'data:text/html;base64,PGgxPmhpPC9oMT4=' });
+  assert.equal(bad.status, 400);
+  // Questionnaire-only still works and the "classic" vibe puts timeless cuts first
+  const q = await api().post('/api/ai/recommendations').send({ faceShape: 'oval', hairType: 'wavy', hairLength: 'short', vibe: 'classic' });
+  assert.equal(q.status, 200);
+});

@@ -29,7 +29,7 @@ style advisor), so the whole app runs locally with **only PostgreSQL**.
 | **Appointments** | Real-time slot availability (Socket.IO), day/week/month calendar, slot engine (hours, breaks, time off, lead time, booking window), **DB-level double-booking prevention**, confirmation workflow, 24h & 1h reminders, waiting list with auto-notify on cancellations, walk-in queue with ETA, walk-in bookings |
 | **Payments** | Stripe PaymentIntents + webhook (or mock), cash, gift cards, invoice numbers & printable invoices, refunds, coupons, membership discounts, loyalty redemption, configurable tax |
 | **Reporting** | Revenue, appointments (+busiest hours), customer retention cohorts, service popularity, barber performance — JSON or CSV |
-| **Bonus** | AI hairstyle recommendations (Claude + rule fallback), before/after gallery slider, membership plans/subscriptions, gift cards, multi-location, QR check-in kiosk, WhatsApp booking bot |
+| **Bonus** | AI Style Advisor: take a selfie with the device camera (or upload one) and Claude's vision reads hair type, length, beard and face shape, then suggests trending and timeless styles that fit the customer's chosen vibe and length preference (the photo is never stored; questionnaire mode and a rule-based fallback work without an API key), "See who's free" day view of open slots with barber names, before/after gallery slider, membership plans/subscriptions, gift cards, multi-location, QR check-in kiosk, WhatsApp booking bot |
 | **UX** | Barber-themed dark & light modes, mobile-first layouts, animated booking flow, lazy-loaded route chunks, toasts, in-app notification centre |
 
 ---
@@ -223,7 +223,7 @@ different domains the refresh cookie uses `SameSite=None; Secure` automatically 
 - [ ] SMTP credentials for email; Twilio credentials for SMS
 - [ ] WhatsApp: in Twilio, set the WhatsApp sender's inbound webhook to `POST /api/webhooks/whatsapp`
 - [ ] `GOOGLE_CLIENT_ID` (API) and `VITE_GOOGLE_CLIENT_ID` (web) for Google sign-in
-- [ ] `ANTHROPIC_API_KEY` for AI style advice (uses `claude-opus-5-5` with server-side refusal fallback; rule-based otherwise)
+- [ ] `ANTHROPIC_API_KEY` for the AI Style Advisor, including **camera / photo analysis** (uses `claude-opus-5-5` vision with server-side refusal fallback). Without it, the photo option is hidden and the questionnaire uses built-in style rules. Camera access needs HTTPS (Render provides it).
 - [ ] When running several API instances: `ENABLE_JOBS=true` on exactly one, and add the Socket.IO Redis adapter
 - [ ] Database backups and log shipping
 

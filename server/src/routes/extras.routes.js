@@ -12,7 +12,7 @@ import { asyncHandler, ApiError } from '../utils/ApiError.js';
 import { idParam, uuid, email, phone } from '../validators/common.js';
 import { createPayment } from '../services/payment.service.js';
 import { validateCoupon } from '../services/pricing.service.js';
-import { recommendHairstyles } from '../services/ai.service.js';
+import { recommendHairstyles, aiPhotoAnalysisEnabled } from '../services/ai.service.js';
 import { notifyUser, sendEmail } from '../services/notification.service.js';
 import { emit } from '../services/socket.js';
 import { randomCode, formatMoney } from '../utils/helpers.js';
@@ -179,15 +179,25 @@ router.patch('/queue/:id', authenticate, authorize('barber', 'admin'), validate(
 }));
 
 // ------------------------------------------------------------ AI hairstyle recommendations
+/** Whether photo analysis (Claude vision) is switched on — the Style Advisor UI adapts to it. */
+router.get('/ai/config', (_req, res) => res.json({ photoAnalysis: aiPhotoAnalysisEnabled() }));
+
 router.post('/ai/recommendations', heavyLimiter, validate({
   body: z.object({
-    faceShape: z.enum(['oval', 'round', 'square', 'oblong', 'heart', 'diamond']),
-    hairType: z.enum(['straight', 'wavy', 'curly', 'coily']),
-    hairLength: z.enum(['short', 'medium', 'long']),
+    // Optional selfie as a data URL (the client resizes to ~768px JPEG, typically 60–150 KB)
+    photo: z.string().max(450_000, 'Photo is too large, please retake it')
+      .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/, 'Photo must be a JPEG, PNG or WebP image').optional(),
+    faceShape: z.enum(['oval', 'round', 'square', 'oblong', 'heart', 'diamond']).optional(),
+    hairType: z.enum(['straight', 'wavy', 'curly', 'coily']).optional(),
+    hairLength: z.enum(['short', 'medium', 'long']).optional(),
     beard: z.enum(['none', 'stubble', 'short', 'full']).optional(),
     maintenance: z.enum(['low', 'medium', 'high']).optional(),
+    vibe: z.enum(['classic', 'trending', 'bold', 'professional']).optional(),
+    lengthChange: z.enum(['keep', 'shorter', 'longer', 'any']).optional(),
     lifestyle: z.string().max(100).optional(),
     notes: z.string().max(300).optional(),
+  }).refine((b) => b.photo || (b.faceShape && b.hairType && b.hairLength), {
+    message: 'Take a photo, or choose your face shape, hair type and length', path: ['photo'],
   }),
 }), asyncHandler(async (req, res) => {
   res.json({ result: await recommendHairstyles(req.body), generatedAt: dayjs().toISOString() });
