@@ -221,6 +221,46 @@ me.delete('/customers/:customerId/notes/:id', asyncHandler(async (req, res) => {
 router.use('/me', me);
 
 // ======================================================== public directory
+/**
+ * GET /barbers/availability?date=YYYY-MM-DD&serviceId=&locationId=
+ * Every bookable barber's open slots for one day, plus the same data grouped by time
+ * ("who is free at 11:00?"). Without a service, a 30-minute appointment is assumed.
+ * Declared before /:id so "availability" isn't parsed as a barber id.
+ */
+router.get('/availability', validate({
+  query: z.object({ date: dateStr, serviceId: uuid.optional(), locationId: uuid.optional() }),
+}), asyncHandler(async (req, res) => {
+  const { date, serviceId, locationId } = req.query;
+  const barbers = await many(
+    `SELECT b.id, u.name, b.title, COALESCE(b.photo_url, u.avatar_url) AS photo_url, b.rating_avg, b.rating_count,
+            b.location_id, l.name AS location_name,
+            ${serviceId ? 'COALESCE(bs.custom_price, s.price)' : 'NULL::numeric'} AS price,
+            ${serviceId ? 'COALESCE(bs.custom_duration, s.duration_min)' : '30'} AS duration_min
+       FROM barbers b JOIN users u ON u.id = b.user_id LEFT JOIN locations l ON l.id = b.location_id
+       ${serviceId ? 'JOIN barber_services bs ON bs.barber_id = b.id AND bs.service_id = $2 JOIN services s ON s.id = bs.service_id AND s.is_active' : ''}
+      WHERE b.is_approved AND u.is_active AND ($1::uuid IS NULL OR b.location_id = $1)
+      ORDER BY b.rating_avg DESC, u.name`,
+    serviceId ? [locationId || null, serviceId] : [locationId || null]);
+
+  let timezone = null;
+  const withSlots = await Promise.all(barbers.map(async (b) => {
+    const r = await getSlots({ barberId: b.id, date, durationMin: b.duration_min });
+    timezone ||= r.timezone;
+    return { ...b, reason: r.reason || null, slots: r.slots.filter((x) => x.available).map(({ start, label }) => ({ start, label })) };
+  }));
+
+  // Group by start time → which barbers are free then
+  const byTime = new Map();
+  for (const b of withSlots) {
+    for (const slot of b.slots) {
+      if (!byTime.has(slot.start)) byTime.set(slot.start, { start: slot.start, label: slot.label, barbers: [] });
+      byTime.get(slot.start).barbers.push(b.id);
+    }
+  }
+  const times = [...byTime.values()].sort((a, b) => a.start.localeCompare(b.start));
+  res.json({ date, timezone, barbers: withSlots, times });
+}));
+
 router.get('/', optionalAuth, validate({
   query: z.object({
     locationId: uuid.optional(), serviceId: uuid.optional(), search: z.string().max(80).optional(),

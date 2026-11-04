@@ -52,7 +52,7 @@ const BEARDS = {
 const MUSTACHE = `<path d="M84 126 C90 120 98 122 100 125 C102 122 110 120 116 126 C110 128 104 128 100 127 C96 128 90 128 84 126Z" fill="${HAIR}"/>`;
 
 /** Front-facing portrait. */
-function portrait({ skin, hair = 'fade', beard = 'none', mustache = false, shirt = '#1f1f24', accent = '#d4a24c', bg = ['#2a2a31', '#16161a'], woman = false, earrings = false, smile = true }) {
+function portrait({ skin, hair = 'fade', beard = 'none', mustache = false, shirt = '#1d1029', accent = '#d4af37', bg = ['#2e1b45', '#150c1f'], woman = false, earrings = false, smile = true }) {
   const id = Math.random().toString(36).slice(2, 8);
   const beardSvg = typeof BEARDS[beard] === 'function' ? BEARDS[beard](skin) : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img">
@@ -88,7 +88,7 @@ const SKIN = { wheat: '#c68e5e', tan: '#b07446', brown: '#9a6238', deep: '#7c4a2
 const barbers = {
   'arjun-mehta': { skin: SKIN.tan, hair: 'quiff', beard: 'boxed', mustache: true, shirt: '#1d1d22' },
   'vikram-singh': { skin: SKIN.bronze, hair: 'turban', beard: 'full', mustache: true, shirt: '#22303f', accent: '#e0b86a' },
-  'priya-sharma': { skin: SKIN.honey, hair: 'long', woman: true, earrings: true, shirt: '#3b1f2b', accent: '#e7a8b8', bg: ['#2d2228', '#17141a'] },
+  'priya-sharma': { skin: SKIN.honey, hair: 'long', woman: true, earrings: true, shirt: '#3b1f2b', accent: '#e7a8b8', bg: ['#3d1e43', '#170c1f'] },
   'rohan-das': { skin: SKIN.brown, hair: 'fade', beard: 'stubble', shirt: '#1f2a24', accent: '#7fc8a9' },
   'karthik-iyer': { skin: SKIN.deep, hair: 'sidepart', beard: 'none', mustache: true, shirt: '#2a2420' },
   'imran-khan': { skin: SKIN.wheat, hair: 'waves', beard: 'full', shirt: '#26222e', accent: '#a99be0' },
@@ -106,23 +106,23 @@ const gallery = [
 ];
 for (const [slug, before, after] of gallery) {
   writeFileSync(join(root, 'gallery', `${slug}-before.svg`), portrait({ ...before, bg: ['#3a3a40', '#222226'], shirt: '#55555c', accent: '#999' }));
-  writeFileSync(join(root, 'gallery', `${slug}-after.svg`), portrait({ ...after, bg: ['#2b2620', '#15130f'] }));
+  writeFileSync(join(root, 'gallery', `${slug}-after.svg`), portrait({ ...after, bg: ['#3a2259', '#150c1f'] }));
 }
 
 // ---- Hero art: barber at work ------------------------------------------------------
-const heroFace = portrait({ ...barbers['arjun-mehta'], bg: ['#2b2620', '#121214'] })
+const heroFace = portrait({ ...barbers['arjun-mehta'], bg: ['#3a2259', '#150c1f'] })
   .replace('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img">', '').replace('</svg>', '');
 writeFileSync(join(root, 'hero.svg'), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img">
-  <defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2620"/><stop offset="1" stop-color="#0d0d0f"/></linearGradient>
-  <pattern id="tile" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L40 0" stroke="#d4a24c" stroke-opacity=".06" stroke-width="2"/></pattern>
+  <defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2259"/><stop offset="1" stop-color="#0e0814"/></linearGradient>
+  <pattern id="tile" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L40 0" stroke="#d4af37" stroke-opacity=".06" stroke-width="2"/></pattern>
   <clipPath id="arch"><rect x="70" y="40" width="260" height="300" rx="130"/></clipPath></defs>
   <rect width="400" height="500" fill="url(#h)"/><rect width="400" height="500" fill="url(#tile)"/>
-  <rect x="70" y="40" width="260" height="300" rx="130" fill="#1a1a1e" stroke="#d4a24c" stroke-opacity=".5" stroke-width="4"/>
+  <rect x="70" y="40" width="260" height="300" rx="130" fill="#1b1028" stroke="#d4af37" stroke-opacity=".5" stroke-width="4"/>
   <g clip-path="url(#arch)"><g transform="translate(50 50) scale(1.5)">${heroFace}</g></g>
-  <rect x="70" y="40" width="260" height="300" rx="130" fill="none" stroke="#d4a24c" stroke-opacity=".5" stroke-width="4"/>
-  <g transform="translate(280 300) rotate(-35)" fill="none" stroke="#d4a24c" stroke-width="6" stroke-linecap="round">
+  <rect x="70" y="40" width="260" height="300" rx="130" fill="none" stroke="#d4af37" stroke-opacity=".5" stroke-width="4"/>
+  <g transform="translate(280 300) rotate(-35)" fill="none" stroke="#d4af37" stroke-width="6" stroke-linecap="round">
     <circle cx="0" cy="40" r="14"/><circle cx="34" cy="40" r="14"/><path d="M8 28 L44 -40 M26 28 L-10 -40"/></g>
-  <rect x="40" y="360" width="320" height="10" rx="5" fill="#d4a24c" opacity=".35"/>
+  <rect x="40" y="360" width="320" height="10" rx="5" fill="#d4af37" opacity=".35"/>
 </svg>`);
 
 console.log('✔ Illustrations written to client/public/images');

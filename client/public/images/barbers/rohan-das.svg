@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img">
   <defs>
-    <linearGradient id="bgs1z4fl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a31"/><stop offset="1" stop-color="#16161a"/></linearGradient>
-    <radialGradient id="sks1z4fl" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#ac744a"/><stop offset="1" stop-color="#9a6238"/></radialGradient>
+    <linearGradient id="bgluo8bo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2e1b45"/><stop offset="1" stop-color="#150c1f"/></linearGradient>
+    <radialGradient id="skluo8bo" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#ac744a"/><stop offset="1" stop-color="#9a6238"/></radialGradient>
   </defs>
-  <rect width="200" height="200" fill="url(#bgs1z4fl)"/>
+  <rect width="200" height="200" fill="url(#bgluo8bo)"/>
   <circle cx="170" cy="30" r="46" fill="#7fc8a9" opacity=".12"/>
   
   <path d="M30 200 C34 166 62 152 100 152 C138 152 166 166 170 200Z" fill="#1f2a24"/>
@@ -12,7 +12,7 @@
   <ellipse cx="60" cy="102" rx="8" ry="12" fill="#925a30"/>
   <ellipse cx="140" cy="102" rx="8" ry="12" fill="#925a30"/>
   
-  <ellipse cx="100" cy="98" rx="40" ry="48" fill="url(#sks1z4fl)"/>
+  <ellipse cx="100" cy="98" rx="40" ry="48" fill="url(#skluo8bo)"/>
   <path d="M64 118 C70 146 86 156 100 156 C114 156 130 146 136 118 C128 134 114 140 100 140 C86 140 72 134 64 118Z" fill="#1c1410" opacity=".28"/>
   <path d="M78 88 C84 84 90 84 94 87" stroke="#1c1410" stroke-width="4" stroke-linecap="round" fill="none"/>
   <path d="M106 87 C110 84 116 84 122 88" stroke="#1c1410" stroke-width="4" stroke-linecap="round" fill="none"/>

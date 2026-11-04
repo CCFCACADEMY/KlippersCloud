@@ -6,7 +6,7 @@ import { Suspense, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarDays, Heart, Gift, User, Clock, Scissors, Users, Star, Ticket, BarChart3,
-  Settings, LogOut, ListOrdered, CreditCard, Sparkles, Menu, X, Store,
+  Settings, LogOut, ListOrdered, CreditCard, Sparkles, Menu, X, Store, CalendarSearch,
 } from 'lucide-react';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
@@ -16,7 +16,7 @@ import { Avatar, PageLoader, cn } from '../ui';
 
 const MENUS = {
   customer: [
-    ['/dashboard', 'Overview', LayoutDashboard], ['/dashboard/appointments', 'Appointments', CalendarDays],
+    ['/dashboard', 'Overview', LayoutDashboard], ['/availability', "See who's free", CalendarSearch], ['/dashboard/appointments', 'Appointments', CalendarDays],
     ['/dashboard/favorites', 'Favorites', Heart], ['/dashboard/rewards', 'Rewards', Gift],
     ['/style-advisor', 'Style Advisor', Sparkles], ['/dashboard/profile', 'Profile', User],
   ],

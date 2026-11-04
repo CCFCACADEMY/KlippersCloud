@@ -19,13 +19,13 @@ const transporter = env.smtp.host
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 const emailTemplate = (title, body) => `
-<div style="font-family:Inter,Arial,sans-serif;background:#0f0f10;padding:32px">
+<div style="font-family:Inter,Arial,sans-serif;background:#150c1f;padding:32px">
   <div style="max-width:520px;margin:auto;background:#fff;border-radius:12px;overflow:hidden">
-    <div style="background:#1a1a1d;color:#d4a24c;padding:20px 24px;font-size:22px;font-weight:700;letter-spacing:1px">✂ KLIPPERS</div>
+    <div style="background:#2e1b45;color:#d4af37;padding:20px 24px;font-size:22px;font-weight:700;letter-spacing:1px">✂ KLIPPERS</div>
     <div style="padding:24px;color:#222">
       <h2 style="margin:0 0 12px">${escapeHtml(title)}</h2>
       <p style="line-height:1.6;white-space:pre-line">${escapeHtml(body)}</p>
-      <a href="${env.clientUrl}/dashboard" style="display:inline-block;margin-top:16px;background:#d4a24c;color:#111;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Open Klippers</a>
+      <a href="${env.clientUrl}/dashboard" style="display:inline-block;margin-top:16px;background:#d4af37;color:#111;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Open Klippers</a>
     </div>
   </div>
 </div>`;

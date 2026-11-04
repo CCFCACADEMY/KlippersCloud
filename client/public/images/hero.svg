@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img">
-  <defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2620"/><stop offset="1" stop-color="#0d0d0f"/></linearGradient>
-  <pattern id="tile" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L40 0" stroke="#d4a24c" stroke-opacity=".06" stroke-width="2"/></pattern>
+  <defs><linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2259"/><stop offset="1" stop-color="#0e0814"/></linearGradient>
+  <pattern id="tile" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L40 0" stroke="#d4af37" stroke-opacity=".06" stroke-width="2"/></pattern>
   <clipPath id="arch"><rect x="70" y="40" width="260" height="300" rx="130"/></clipPath></defs>
   <rect width="400" height="500" fill="url(#h)"/><rect width="400" height="500" fill="url(#tile)"/>
-  <rect x="70" y="40" width="260" height="300" rx="130" fill="#1a1a1e" stroke="#d4a24c" stroke-opacity=".5" stroke-width="4"/>
+  <rect x="70" y="40" width="260" height="300" rx="130" fill="#1b1028" stroke="#d4af37" stroke-opacity=".5" stroke-width="4"/>
   <g clip-path="url(#arch)"><g transform="translate(50 50) scale(1.5)">
   <defs>
-    <linearGradient id="bgnlzg3g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b2620"/><stop offset="1" stop-color="#121214"/></linearGradient>
-    <radialGradient id="sknlzg3g" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#c28658"/><stop offset="1" stop-color="#b07446"/></radialGradient>
+    <linearGradient id="bgm3xh52" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a2259"/><stop offset="1" stop-color="#150c1f"/></linearGradient>
+    <radialGradient id="skm3xh52" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#c28658"/><stop offset="1" stop-color="#b07446"/></radialGradient>
   </defs>
-  <rect width="200" height="200" fill="url(#bgnlzg3g)"/>
-  <circle cx="170" cy="30" r="46" fill="#d4a24c" opacity=".12"/>
+  <rect width="200" height="200" fill="url(#bgm3xh52)"/>
+  <circle cx="170" cy="30" r="46" fill="#d4af37" opacity=".12"/>
   
   <path d="M30 200 C34 166 62 152 100 152 C138 152 166 166 170 200Z" fill="#1d1d22"/>
-  <path d="M84 150 L100 172 L116 150" fill="none" stroke="#d4a24c" stroke-width="3" opacity=".8"/>
+  <path d="M84 150 L100 172 L116 150" fill="none" stroke="#d4af37" stroke-width="3" opacity=".8"/>
   <rect x="88" y="128" width="24" height="30" rx="10" fill="#a26638"/>
   <ellipse cx="60" cy="102" rx="8" ry="12" fill="#a86c3e"/>
   <ellipse cx="140" cy="102" rx="8" ry="12" fill="#a86c3e"/>
   
-  <ellipse cx="100" cy="98" rx="40" ry="48" fill="url(#sknlzg3g)"/>
+  <ellipse cx="100" cy="98" rx="40" ry="48" fill="url(#skm3xh52)"/>
   <path d="M62 110 C64 146 86 158 100 158 C114 158 136 146 138 110 C132 126 124 132 116 133 C110 128 90 128 84 133 C76 132 68 126 62 110Z" fill="#1c1410" opacity=".92"/>
   <path d="M78 88 C84 84 90 84 94 87" stroke="#1c1410" stroke-width="4" stroke-linecap="round" fill="none"/>
   <path d="M106 87 C110 84 116 84 122 88" stroke="#1c1410" stroke-width="4" stroke-linecap="round" fill="none"/>
@@ -30,8 +30,8 @@
   <path d="M60 96 C56 58 74 36 104 32 C126 30 146 46 142 70 C140 82 140 90 140 96 C134 72 122 64 100 64 C80 64 66 74 60 96Z" fill="#1c1410"/>
           <path d="M88 40 C100 22 132 24 138 44 C126 36 108 36 88 40Z" fill="#1c1410"/>
 </g></g>
-  <rect x="70" y="40" width="260" height="300" rx="130" fill="none" stroke="#d4a24c" stroke-opacity=".5" stroke-width="4"/>
-  <g transform="translate(280 300) rotate(-35)" fill="none" stroke="#d4a24c" stroke-width="6" stroke-linecap="round">
+  <rect x="70" y="40" width="260" height="300" rx="130" fill="none" stroke="#d4af37" stroke-opacity=".5" stroke-width="4"/>
+  <g transform="translate(280 300) rotate(-35)" fill="none" stroke="#d4af37" stroke-width="6" stroke-linecap="round">
     <circle cx="0" cy="40" r="14"/><circle cx="34" cy="40" r="14"/><path d="M8 28 L44 -40 M26 28 L-10 -40"/></g>
-  <rect x="40" y="360" width="320" height="10" rx="5" fill="#d4a24c" opacity=".35"/>
+  <rect x="40" y="360" width="320" height="10" rx="5" fill="#d4af37" opacity=".35"/>
 </svg>

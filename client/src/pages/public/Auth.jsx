@@ -13,7 +13,7 @@ function Shell({ title, subtitle, children }) {
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <Card className="overflow-hidden">
-          <div className="pole-stripes h-1.5 animate-pole" />
+          <div className="h-1 bg-gradient-to-r from-brass-600 via-brass-300 to-brass-600" />
           <div className="p-8">
             <Logo />
             <h1 className="mt-6 text-3xl font-bold">{title}</h1>

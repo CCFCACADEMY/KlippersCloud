@@ -32,16 +32,20 @@ export default function Book() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [[step, dir], setStep] = useState([0, 1]);
+  // Deep link from "See who's free": ?service=&barber=&date=YYYY-MM-DD&start=ISO jumps straight to Details
+  const preDate = /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') || '') ? (([y, m, d]) => new Date(y, m - 1, d))(params.get('date').split('-').map(Number)) : null;
+  const preStart = preDate && params.get('start') ? params.get('start') : null;
+  const prefilled = !!(params.get('service') && params.get('barber') && preStart);
+  const [[step, dir], setStep] = useState([prefilled ? 3 : 0, 1]);
   const [serviceIds, setServiceIds] = useState(params.get('service') ? [params.get('service')] : []);
   const [barberId, setBarberId] = useState(params.get('barber') || null);
-  const [month, setMonth] = useState(startOfMonth(new Date()));
-  const [date, setDate] = useState(null);
+  const [month, setMonth] = useState(startOfMonth(preDate || new Date()));
+  const [date, setDate] = useState(preDate);
   const [slots, setSlots] = useState(null);
   const [slotReason, setSlotReason] = useState('');
   const [tz, setTz] = useState(undefined);
   const [monthAvail, setMonthAvail] = useState({});
-  const [startAt, setStartAt] = useState(null);
+  const [startAt, setStartAt] = useState(preStart);
   const [details, setDetails] = useState({ notes: '', couponCode: '', redeemPoints: 0, name: '', email: '', phone: '' });
   const [quote, setQuote] = useState(null);
   const [submitting, setSubmitting] = useState(false);

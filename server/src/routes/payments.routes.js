@@ -89,10 +89,10 @@ router.get('/:id/invoice', authenticate, validate({ params: idParam }), asyncHan
   const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const $ = (n) => formatMoney(n, s.currency);
   res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${esc(p.invoice_number)}</title>
-<style>body{font-family:Inter,Arial,sans-serif;max-width:720px;margin:40px auto;color:#1a1a1d;padding:0 16px}
+<style>body{font-family:Inter,Arial,sans-serif;max-width:720px;margin:40px auto;color:#2e1b45;padding:0 16px}
 h1{font-family:Georgia,serif;margin:0}.muted{color:#777}.row{display:flex;justify-content:space-between}
 table{width:100%;border-collapse:collapse;margin:24px 0}td,th{padding:10px;border-bottom:1px solid #eee;text-align:left}
-td:last-child,th:last-child{text-align:right}.total{font-size:20px;font-weight:700}.badge{display:inline-block;padding:4px 10px;border-radius:99px;background:#d4a24c;color:#111;font-size:12px;text-transform:uppercase}
+td:last-child,th:last-child{text-align:right}.total{font-size:20px;font-weight:700}.badge{display:inline-block;padding:4px 10px;border-radius:99px;background:#d4af37;color:#111;font-size:12px;text-transform:uppercase}
 @media print{button{display:none}}</style></head><body>
 <div class="row"><div><h1>✂ ${esc(s.business_name)}</h1><div class="muted">${esc(p.location_name || '')} ${esc(p.address || '')}</div></div>
 <div style="text-align:right"><div class="badge">${esc(p.status)}</div><div>Invoice <b>${esc(p.invoice_number)}</b></div>

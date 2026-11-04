@@ -18,7 +18,7 @@ export default function Footer() {
         <div>
           <p className="label">Explore</p>
           <ul className="space-y-2 text-sm">
-            {[['/services', 'Services & pricing'], ['/barbers', 'Our barbers'], ['/gallery', 'Before & after'], ['/queue', 'Live walk-in queue']].map(([to, l]) => (
+            {[['/availability', "See who's free today"], ['/services', 'Services & pricing'], ['/barbers', 'Our barbers'], ['/gallery', 'Before & after'], ['/queue', 'Live walk-in queue']].map(([to, l]) => (
               <li key={to}><Link to={to} className="hover:text-brass-500">{l}</Link></li>
             ))}
           </ul>

@@ -9,8 +9,8 @@ import { useAuth, homeFor } from '../../context/AuthContext';
 import { Avatar, cn } from '../ui';
 
 const LINKS = [
-  ['/services', 'Services'], ['/barbers', 'Barbers'], ['/gallery', 'Gallery'],
-  ['/style-advisor', 'AI Style Advisor'], ['/memberships', 'Memberships'], ['/gift-cards', 'Gift Cards'],
+  ['/availability', "See who's free"], ['/services', 'Services'], ['/barbers', 'Barbers'], ['/gallery', 'Gallery'],
+  ['/style-advisor', 'Style Advisor'], ['/memberships', 'Memberships'], ['/gift-cards', 'Gift Cards'],
 ];
 
 export default function Navbar() {
@@ -20,12 +20,11 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-cream/80 backdrop-blur-xl dark:border-white/5 dark:bg-ink-950/80">
-      <div className="pole-stripes h-1 w-full animate-pole opacity-80" />
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Logo />
-        <div className="hidden items-center gap-1 lg:flex">
+        <div className="hidden items-center gap-0.5 xl:flex">
           {LINKS.map(([to, label]) => (
-            <NavLink key={to} to={to} className={({ isActive }) => cn('rounded-lg px-3 py-2 text-sm font-medium transition hover:text-brass-500', isActive ? 'text-brass-500' : 'muted')}>
+            <NavLink key={to} to={to} className={({ isActive }) => cn('whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition hover:text-brass-500', isActive ? 'text-brass-500' : 'muted')}>
               {label}
             </NavLink>
           ))}
@@ -44,14 +43,14 @@ export default function Navbar() {
             <Link to="/login" className="btn-ghost hidden sm:inline-flex">Sign in</Link>
           )}
           <Link to="/book" className="btn-primary ml-1 hidden sm:inline-flex">Book now</Link>
-          <button className="btn-ghost p-2 lg:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menu">
+          <button className="btn-ghost p-2 xl:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menu">
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </nav>
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden lg:hidden">
+          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden xl:hidden">
             <div className="space-y-1 px-4 pb-4">
               {LINKS.map(([to, label]) => (
                 <NavLink key={to} to={to} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 font-medium hover:bg-black/5 dark:hover:bg-white/5">{label}</NavLink>

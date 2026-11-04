@@ -16,6 +16,7 @@ const Services = lazy(() => import('./pages/public/Services'));
 const Barbers = lazy(() => import('./pages/public/Barbers'));
 const BarberProfile = lazy(() => import('./pages/public/BarberProfile'));
 const Book = lazy(() => import('./pages/public/Book'));
+const Availability = lazy(() => import('./pages/public/Availability'));
 const Gallery = lazy(() => import('./pages/public/Gallery'));
 const Memberships = lazy(() => import('./pages/public/Memberships'));
 const GiftCards = lazy(() => import('./pages/public/GiftCards'));
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="barbers" element={<Barbers />} />
         <Route path="barbers/:id" element={<BarberProfile />} />
         <Route path="book" element={<Book />} />
+        <Route path="availability" element={<Availability />} />
         <Route path="gallery" element={<Gallery />} />
         <Route path="memberships" element={<Memberships />} />
         <Route path="gift-cards" element={<GiftCards />} />

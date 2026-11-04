@@ -307,3 +307,26 @@ test('INR pricing: GST 18% and rupee formatting', async () => {
   const wa = await api().post('/api/webhooks/whatsapp').type('form').send({ From: 'whatsapp:+919820000555', Body: 'services' });
   assert.match(wa.text, /₹/);
 });
+
+test('availability overview: all barbers and their open slots for a day', async () => {
+  const date = dayjs().tz('Asia/Kolkata').add(3, 'day').day() === 0
+    ? dayjs().tz('Asia/Kolkata').add(4, 'day').format('YYYY-MM-DD') : dayjs().tz('Asia/Kolkata').add(3, 'day').format('YYYY-MM-DD');
+  const svc = services.find((s) => s.name === 'Skin Fade');
+  const res = await api().get('/api/barbers/availability').query({ date, serviceId: svc.id });
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  assert.ok(res.body.barbers.length >= 1);
+  const arjun = res.body.barbers.find((b) => b.name === 'Arjun Mehta');
+  assert.equal(arjun.price, 500, 'barber-specific price (senior premium)');
+  assert.ok(arjun.slots.length > 0);
+  const t = res.body.times[0];
+  assert.ok(t.barbers.length >= 1 && t.label);
+  // Every grouped slot really is open for each listed barber
+  for (const time of res.body.times.slice(0, 5)) {
+    for (const id of time.barbers) assert.ok(res.body.barbers.find((b) => b.id === id).slots.some((s) => s.start === time.start));
+  }
+  // Coloring is only offered by the colourist
+  const col = services.find((s) => s.category === 'coloring');
+  const c = await api().get('/api/barbers/availability').query({ date, serviceId: col?.id || svc.id });
+  assert.ok(c.body.barbers.every((b) => b.name !== 'Arjun Mehta') || !col);
+  assert.equal((await api().get('/api/barbers/availability').query({ date: 'tomorrow' })).status, 400);
+});

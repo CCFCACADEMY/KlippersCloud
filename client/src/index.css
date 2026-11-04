@@ -6,15 +6,26 @@
   :root {
     color-scheme: light;
     /* Chart roles (validated: see README → Data visualisation) */
-    --chart-surface: #ffffff; --chart-grid: #e7e2d8; --chart-text: #6b6860;
-    --series-1: #b07d22; --series-2: #2a78d6; --series-3: #eb6834; --series-4: #1baf7a;
+    --chart-surface: #ffffff; --chart-grid: #ebe4f2; --chart-text: #6b6077;
+    --series-1: #a8862a; --series-2: #2a78d6; --series-3: #eb6834; --series-4: #1baf7a;
   }
   .dark {
     color-scheme: dark;
-    --chart-surface: #1c1c21; --chart-grid: #2c2c33; --chart-text: #a3a2a8;
-    --series-1: #b5832c; --series-2: #3987e5; --series-3: #d95926; --series-4: #199e70;
+    --chart-surface: #221433; --chart-grid: #35234a; --chart-text: #b3a7c2;
+    --series-1: #a8882c; --series-2: #3987e5; --series-3: #d95926; --series-4: #199e70;
   }
   h1, h2, h3 { @apply font-display tracking-tight; }
+  body {
+    background-image:
+      radial-gradient(1200px 600px at 100% -10%, rgba(106, 70, 176, 0.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(212, 175, 55, 0.08), transparent 60%);
+    background-attachment: fixed;
+  }
+  .dark body {
+    background-image:
+      radial-gradient(1200px 600px at 100% -10%, rgba(106, 70, 176, 0.22), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(212, 175, 55, 0.07), transparent 60%);
+  }
   ::selection { @apply bg-brass-400 text-ink-900; }
 }
 
@@ -34,7 +45,7 @@
   .muted { @apply text-ink-500 dark:text-white/50; }
   /* Barber pole stripe — used as decorative accent and loading bar */
   .pole-stripes {
-    background-image: repeating-linear-gradient(-45deg, #c0392b 0 10px, #f7f3ec 10px 20px, #1f4e8c 20px 30px, #f7f3ec 30px 40px);
+    background-image: repeating-linear-gradient(-45deg, #9b1b3b 0 10px, #faf6ef 10px 20px, #2f2a8a 20px 30px, #faf6ef 30px 40px);
     background-size: 56px 56px;
   }
 }
