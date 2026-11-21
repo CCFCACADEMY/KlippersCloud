@@ -403,3 +403,18 @@ test('no customer turned away: alternatives incl. express slot, all bookable', a
     assert.equal(r.status, 201, `${o.type} ${o.start}: ${JSON.stringify(r.body)}`);
   }
 });
+
+test('alternatives: a free requested slot is offered first with a good-news message', async () => {
+  const skin = (await api().get('/api/services')).body.services.find((s) => s.name === 'Skin Fade');
+  let date; let time;
+  for (let i = 4; i < 20 && !time; i++) {
+    const d = dayjs().tz('Asia/Kolkata').add(i, 'day').format('YYYY-MM-DD');
+    const slot = (await api().get(`/api/barbers/${barber.id}/availability`).query({ date: d, serviceIds: skin.id })).body.slots.find((s) => s.available);
+    if (slot) { date = d; time = dayjs(slot.start).tz('Asia/Kolkata').format('HH:mm'); }
+  }
+  const r = await api().post('/api/appointments/alternatives').send({ serviceIds: [skin.id], date, time, barberId: barber.id });
+  assert.equal(r.body.requestedAvailable, true);
+  assert.equal(r.body.options[0].barberId, barber.id);
+  assert.equal(r.body.options[0].type, 'exact');
+  assert.match(r.body.message, /Good news/);
+});
