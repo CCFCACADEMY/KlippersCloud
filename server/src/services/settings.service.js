@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = {
   tax_rate: 18,                    // percent (GST on salon services)
   booking_lead_minutes: 60,        // earliest bookable slot from "now"
   booking_window_days: 60,         // how far ahead customers can book
+  express_min_ratio: 0.65,         // an express (shortened) service may take as little as 65% of the normal time
   cancellation_window_hours: 4,    // free cancellation before this
   loyalty_points_per_dollar: 0.1,  // points earned per currency unit spent (0.1 = 1 point per ₹10)
   loyalty_redeem_rate: 0.5,        // currency value of 1 point when redeeming (100 pts = ₹50)

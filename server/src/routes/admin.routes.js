@@ -221,7 +221,8 @@ router.put('/settings', validate({
   body: z.object({
     business_name: z.string().min(2).max(80).optional(), currency: z.string().length(3).optional(),
     tax_rate: z.number().min(0).max(50).optional(), booking_lead_minutes: z.number().int().min(0).max(10080).optional(),
-    booking_window_days: z.number().int().min(1).max(365).optional(), cancellation_window_hours: z.number().min(0).max(168).optional(),
+    booking_window_days: z.number().int().min(1).max(365).optional(),
+    express_min_ratio: z.number().min(0.5).max(1).optional(), cancellation_window_hours: z.number().min(0).max(168).optional(),
     loyalty_points_per_dollar: z.number().min(0).max(100).optional(), loyalty_redeem_rate: z.number().min(0).max(10).optional(),
     loyalty_min_redeem: z.number().int().min(0).optional(), review_bonus_points: z.number().int().min(0).max(1000).optional(),
     default_timezone: z.string().max(60).optional(), whatsapp_enabled: z.boolean().optional(),

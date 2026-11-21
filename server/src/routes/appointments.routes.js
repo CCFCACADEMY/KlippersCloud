@@ -22,6 +22,7 @@ import { heavyLimiter } from '../middleware/rateLimit.js';
 import { asyncHandler, ApiError } from '../utils/ApiError.js';
 import { idParam, uuid, email, phone, isoDate } from '../validators/common.js';
 import { quote } from '../services/pricing.service.js';
+import { suggestAlternatives, expressMinutes } from '../services/alternatives.service.js';
 import { assertSlotAvailable, getBarberContext } from '../services/availability.service.js';
 import { notifyUser, notifyGuest } from '../services/notification.service.js';
 import { adjustPoints } from '../services/loyalty.service.js';
@@ -118,6 +119,8 @@ const bookingSchema = quoteSchema.extend({
   guest: z.object({ name: z.string().min(2).max(80), email, phone }).optional(),
   // Staff booking on behalf of a registered customer
   customerId: uuid.optional(),
+  // Book a shortened "express" version (offered by the alternatives finder); validated below
+  expressMinutes: z.coerce.number().int().min(10).max(480).optional(),
 });
 
 router.post('/', heavyLimiter, optionalAuth, validate({ body: bookingSchema }), asyncHandler(async (req, res) => {
@@ -134,9 +137,18 @@ router.post('/', heavyLimiter, optionalAuth, validate({ body: bookingSchema }), 
   if (!actor) source = 'guest';
 
   const q = await quote({ barberId, serviceIds, couponCode, userId: customerId, redeemPoints });
-  const barber = await assertSlotAvailable({ barberId, startAt, durationMin: q.durationMin, ignoreLead: isStaff });
+  // Express: a shortened service that still fits the shop's minimum (e.g. 75% of the normal time)
+  let durationMin = q.durationMin;
+  let bookingNotes = notes || null;
+  if (req.body.expressMinutes && req.body.expressMinutes < q.durationMin) {
+    const min = expressMinutes(q.durationMin, Number((await getSettings()).express_min_ratio) || 0.65);
+    if (!min || req.body.expressMinutes < min) throw ApiError.badRequest(`An express version of this service needs at least ${min || q.durationMin} minutes`);
+    durationMin = req.body.expressMinutes;
+    bookingNotes = `⚡ Express service: ${durationMin} min instead of ${q.durationMin} min.${notes ? ` ${notes}` : ''}`;
+  }
+  const barber = await assertSlotAvailable({ barberId, startAt, durationMin, ignoreLead: isStaff });
   const start = dayjs(startAt);
-  const end = start.add(q.durationMin, 'minute');
+  const end = start.add(durationMin, 'minute');
   const status = barber.auto_confirm || isStaff ? 'confirmed' : 'pending';
 
   const id = await withTransaction(async (c) => {
@@ -145,7 +157,7 @@ router.post('/', heavyLimiter, optionalAuth, validate({ body: bookingSchema }), 
                                  status, source, notes, subtotal, discount, tax, total, coupon_id, points_redeemed)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
       [customerId, customerId ? null : guest.name, customerId ? null : guest.email, customerId ? null : guest.phone,
-        barberId, barber.location_id, start.toDate(), end.toDate(), status, source, notes || null,
+        barberId, barber.location_id, start.toDate(), end.toDate(), status, source, bookingNotes,
         q.subtotal, q.discount, q.tax, q.total, q.coupon?.id || null, q.pointsUsed],
     );
     for (const s of q.items) {
@@ -180,6 +192,27 @@ router.post('/', heavyLimiter, optionalAuth, validate({ body: bookingSchema }), 
   });
   broadcastSlots(barberId);
   res.status(201).json({ appointment: appt });
+}));
+
+// ------------------------------------------------------------------ alternatives (never turn a customer away)
+/**
+ * POST /appointments/alternatives
+ * The customer's wished-for date + time (shop time) + services, optionally a barber.
+ * Returns real, bookable options: same time with another barber, an express (shorter)
+ * version at that exact time, nearest times that day, or a similar time on later days.
+ */
+router.post('/alternatives', heavyLimiter, optionalAuth, validate({
+  body: z.object({
+    serviceIds: z.array(uuid).min(1).max(6),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
+    time: z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:mm'),
+    barberId: uuid.optional().nullable(),
+    locationId: uuid.optional().nullable(),
+    notes: z.string().max(300).optional(),
+  }),
+}), asyncHandler(async (req, res) => {
+  const { notes, ...request } = req.body;
+  res.json(await suggestAlternatives(request, { notes }));
 }));
 
 // ------------------------------------------------------------------ list (role-scoped)

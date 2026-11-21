@@ -10,7 +10,7 @@ import { Button, Card, Field, Input, PageHeader, PageLoader, Table, Tabs, Toggle
 const FIELDS = [
   ['business_name', 'Business name', 'text'], ['contact_email', 'Contact email', 'email'], ['contact_phone', 'Contact phone', 'text'],
   ['tax_rate', 'GST rate (%)', 'number'], ['booking_lead_minutes', 'Min. booking notice (minutes)', 'number'], ['booking_window_days', 'Booking window (days ahead)', 'number'],
-  ['cancellation_window_hours', 'Free cancellation window (hours)', 'number'], ['loyalty_points_per_dollar', 'Points per ₹1 spent (0.1 = 1 pt / ₹10)', 'number'],
+  ['cancellation_window_hours', 'Free cancellation window (hours)', 'number'], ['express_min_ratio', 'Express service: shortest allowed (0.65 = 65% of normal time)', 'number'], ['loyalty_points_per_dollar', 'Points per ₹1 spent (0.1 = 1 pt / ₹10)', 'number'],
   ['loyalty_redeem_rate', '₹ value per point', 'number'], ['loyalty_min_redeem', 'Min points to redeem', 'number'], ['review_bonus_points', 'Review bonus points', 'number'],
   ['default_timezone', 'Default timezone', 'text'],
 ];

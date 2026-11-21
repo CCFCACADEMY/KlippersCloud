@@ -12,12 +12,13 @@ import { Check, ChevronLeft, Clock, PartyPopper, Tag, User, CalendarPlus } from 
 import toast from 'react-hot-toast';
 import { api, errMsg } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
-import { money, fmtDateTime } from '../../lib/format';
+import { money, fmtDateTime, fmtDate } from '../../lib/format';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch } from '../../hooks/useFetch';
 import { Avatar, Button, Card, Field, Input, PageLoader, Stars, Textarea, cn, Spinner, EmptyState } from '../../components/ui';
 import MonthCalendar from '../../components/booking/MonthCalendar';
 import SlotGrid from '../../components/booking/SlotGrid';
+import AlternativesFinder from '../../components/booking/AlternativesFinder';
 import ServiceIcon, { CATEGORY_LABELS } from '../../components/booking/ServiceIcon';
 
 const STEPS = ['Services', 'Barber', 'Date & time', 'Details'];
@@ -60,6 +61,10 @@ export default function Book() {
   // Refs let the real-time slot refresh see the latest step / selection without re-subscribing
   const stepRef = useRef(step);
   stepRef.current = step;
+  // Express (shortened) duration chosen from the alternatives finder, or null for the full service
+  const [express, setExpress] = useState(prefilled && Number(params.get('express')) > 0 ? Number(params.get('express')) : null);
+  const expressRef = useRef(express);
+  expressRef.current = express;
   const startAtRef = useRef(startAt);
   startAtRef.current = startAt;
 
@@ -105,7 +110,7 @@ export default function Book() {
       setTz(data.timezone);
       // If someone else just booked the selected slot, clear it and tell the user
       const cur = startAtRef.current;
-      if (cur && !data.slots.find((s) => s.start === cur && s.available)) {
+      if (cur && !expressRef.current && !data.slots.find((s) => s.start === cur && s.available)) {
         setStartAt(null);
         if (stepRef.current === 3) {
           toast.error('Sorry, that time was just booked by someone else. Please pick another time.');
@@ -138,6 +143,21 @@ export default function Book() {
     return () => clearTimeout(t);
   }, [step, barberId, serviceIds, details.couponCode, details.redeemPoints]);
 
+  /** Apply an option from the alternatives finder and jump to Details. */
+  function pickAlternative(o) {
+    const [y, m, d] = fmtDate(o.start, 'yyyy-MM-dd', tz).split('-').map(Number);
+    const day = new Date(y, m - 1, d);
+    setExpress(o.express ? o.durationMin : null);
+    expressRef.current = o.express ? o.durationMin : null;
+    startAtRef.current = o.start;
+    setBarberId(o.barberId);
+    setDate(day);
+    setMonth(startOfMonth(day));
+    setStartAt(o.start);
+    setStep([3, 1]);
+    toast.success(o.express ? `Express ${o.durationMin}-minute service booked in for ${fmtDateTime(o.start, tz)}. Just confirm.` : `${fmtDateTime(o.start, tz)} with ${o.barberName}. Just confirm.`);
+  }
+
   async function submit() {
     if (!startAt) { toast.error('Please pick a time for your appointment.'); go(2); return; }
     if (!user) {
@@ -151,6 +171,7 @@ export default function Book() {
         barberId, serviceIds, startAt, notes: details.notes || undefined,
         couponCode: details.couponCode || undefined, redeemPoints: details.redeemPoints || undefined,
         guest: user ? undefined : { name: details.name, email: details.email, phone: details.phone },
+        expressMinutes: express || undefined,
       });
       setBooked(data.appointment);
       if (user) api.get(`/appointments/${data.appointment.id}/qr`).then((r) => setBooked((b) => ({ ...b, qr: r.data.dataUrl })));
@@ -246,23 +267,32 @@ export default function Book() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <Card className="p-5">
                     <MonthCalendar month={month} onMonthChange={setMonth} selected={date} availability={monthAvail}
-                      onSelect={(d) => { setDate(d); setStartAt(null); }} maxDate={addDays(new Date(), 60)} />
+                      onSelect={(d) => { setDate(d); setStartAt(null); setExpress(null); }} maxDate={addDays(new Date(), 60)} />
                   </Card>
                   <Card className="p-5">
                     {!date ? <EmptyState icon={CalendarPlus} title="Pick a date" text="Green dots show days with openings." /> : !slots ? <Spinner /> :
                       slots.filter((s) => s.available).length === 0 ? (
-                        <EmptyState title="Fully booked" text={slotReason || 'No openings this day.'} action={user?.role === 'customer' && (
-                          <Button variant="secondary" onClick={() => api.post('/me/waitlist', { barberId, serviceId: serviceIds[0], desiredDate: format(date, 'yyyy-MM-dd') })
-                            .then(() => toast.success("You're on the waiting list — we'll notify you if a slot opens.")).catch((e) => toast.error(errMsg(e)))}>
-                            Join waiting list
-                          </Button>)} />
+                        <>
+                          <EmptyState title="Fully booked" text={`${slotReason || 'No openings this day.'} Tell us your preferred time and we'll find the nearest opening.`} action={user?.role === 'customer' && (
+                            <Button variant="secondary" onClick={() => api.post('/me/waitlist', { barberId, serviceId: serviceIds[0], desiredDate: format(date, 'yyyy-MM-dd') })
+                              .then(() => toast.success("You're on the waiting list — we'll notify you if a slot opens.")).catch((e) => toast.error(errMsg(e)))}>
+                              Join waiting list
+                            </Button>)} />
+                        </>
                       ) : (
                         <>
                           <p className="mb-4 font-semibold">{format(date, 'EEEE, MMMM d')} <span className="text-xs font-normal muted">· times in shop local time</span></p>
-                          <SlotGrid slots={slots} value={startAt} onChange={setStartAt} timezone={tz} />
+                          <SlotGrid slots={slots} value={express ? null : startAt} onChange={(v) => { setExpress(null); setStartAt(v); }} timezone={tz} />
                         </>
                       )}
                   </Card>
+                  {/* Full width so the suggestions are easy to read; opens by itself on a fully booked day */}
+                  {date && slots && (
+                    <div className="md:col-span-2">
+                      <AlternativesFinder key={format(date, 'yyyy-MM-dd')} autoOpen={!slots.some((x) => x.available)}
+                        serviceIds={serviceIds} barberId={barberId} date={date} onPick={pickAlternative} />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -315,7 +345,8 @@ export default function Book() {
                 <div key={s.id} className="flex justify-between"><span>{s.name}</span><span className="muted">{money(s.price)}</span></div>
               ))}
               {barber && <div className="flex items-center gap-2 border-t border-black/5 pt-3 dark:border-white/5"><Avatar src={barber.photo_url} name={barber.name} size="sm" /><span>{barber.name}</span></div>}
-              {startAt && <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-brass-400" />{fmtDateTime(startAt, tz)} · {duration} min</p>}
+              {startAt && <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-brass-400" />{fmtDateTime(startAt, tz)} · {express || duration} min</p>}
+              {express && <p className="rounded-lg bg-brass-400/10 px-2 py-1 text-xs">⚡ Express service: {express} min instead of {duration} min. Same price, a quicker finish.</p>}
               {step === 3 && quote && !quote.error && (
                 <div className="space-y-1.5 border-t border-black/5 pt-3 dark:border-white/5">
                   <Row label="Subtotal" value={money(quote.subtotal)} />

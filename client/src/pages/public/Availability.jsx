@@ -13,8 +13,9 @@ import { addDays, format, isSameDay, startOfDay } from 'date-fns';
 import { CalendarSearch, Clock, MapPin, Users, Scissors } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch';
 import { getSocket } from '../../lib/socket';
-import { money, fmtTime, hourIn } from '../../lib/format';
+import { money, fmtTime, hourIn, fmtDate } from '../../lib/format';
 import { Avatar, Card, EmptyState, PageLoader, Select, Stars, Tabs, cn } from '../../components/ui';
+import AlternativesFinder from '../../components/booking/AlternativesFinder';
 
 const DAYS_AHEAD = 14;
 
@@ -129,8 +130,14 @@ export default function Availability() {
 
       <div className="mt-6">
         {!data || (loading && !data) ? <PageLoader /> : times.length === 0 ? (
-          <EmptyState icon={CalendarSearch} title={isSameDay(date, today) ? 'No more open times today' : `No open times on ${format(date, 'EEEE, MMM d')}`}
-            text={data.barbers.length ? 'Everyone is booked or off this day. Try another day or service.' : 'No barber offers this service at the chosen location.'} />
+          <>
+            <EmptyState icon={CalendarSearch} title={isSameDay(date, today) ? 'No more open times today' : `No open times on ${format(date, 'EEEE, MMM d')}`}
+              text={data.barbers.length ? 'Everyone is booked or off this day. Tell us your preferred time and we will find the nearest opening.' : 'No barber offers this service at the chosen location.'} />
+            {data.barbers.length > 0 && (
+              <AlternativesFinder key={`${dateStr}-${serviceId}`} autoOpen serviceIds={[serviceId]} date={date}
+                onPick={(o) => navigate(`/book?service=${serviceId}&barber=${o.barberId}&date=${fmtDate(o.start, 'yyyy-MM-dd', data.timezone)}&start=${encodeURIComponent(o.start)}${o.express ? `&express=${o.durationMin}` : ''}`)} />
+            )}
+          </>
         ) : view === 'time' ? (
           <div className="space-y-2">
             {times.map((t, i) => (

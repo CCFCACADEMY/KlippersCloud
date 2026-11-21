@@ -40,6 +40,7 @@ Rate limits: 600 req / 15 min per IP globally · 20 / 15 min on credential endpo
 | GET | `/:id` | public | Profile, services (with barber pricing), hours, reviews, gallery |
 | GET | `/:id/availability?date=YYYY-MM-DD&serviceIds=a,b` | public | Every slot of the day with `available` flag + `timezone` |
 | GET | `/:id/availability/month?month=YYYY-MM&duration=` | public | Open-slot count per day (calendar dots) |
+| GET | `/availability?date=&serviceId=&locationId=` | public | Every barber's open slots for a day, also grouped by time ("See who's free") |
 | GET | `/me` | barber | Own profile, hours, services, time off |
 | PATCH | `/me` | barber | `{title, bio, experience_years, specialties[], photo_url, auto_confirm, slot_interval}` |
 | PUT | `/me/hours` | barber | `{hours: [7 × {day_of_week, is_off, start_time, end_time, break_start?, break_end?}]}` |
@@ -63,6 +64,7 @@ Rate limits: 600 req / 15 min per IP globally · 20 / 15 min on credential endpo
 | PATCH | `/:id/reschedule` | owner/staff | `{startAt, barberId? (admin)}` — customers must be outside the cancellation window |
 | PATCH | `/:id/cancel` | owner/staff | `{reason?}` — auto-refund + restore points unless late cancellation; notifies waitlist |
 | PATCH | `/:id/status` | barber, admin | `{status: confirmed\|rejected\|checked_in\|in_progress\|completed\|no_show, reason?}` (validated transitions). `completed` awards points and settles cash. |
+| POST | `/alternatives` | public | `{serviceIds[], date: YYYY-MM-DD, time: HH:mm, barberId?, locationId?, notes?}` → real, bookable options when the wished-for slot is taken: same time with another barber, an **express** (shortened, ≥ `express_min_ratio` of normal time) service at the exact time, nearest times that day, or a similar time on later days. Ranked and explained by Claude when `ANTHROPIC_API_KEY` is set (it can only pick from the generated slots). Book an express option by passing `expressMinutes` to `POST /appointments`. |
 | POST | `/checkin` | public | `{code}` — kiosk/QR check-in (opens 2h before) |
 | POST | `/walk-in` | barber, admin | `{serviceIds[], name, phone?, customerId?, barberId? (admin), startAt?}` |
 | POST | `/guest/lookup` · `/guest/cancel` | guest | `{code, email}` |

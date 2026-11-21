@@ -352,3 +352,54 @@ test('style advisor: photo input, preferences, validation and fallback', async (
   const q = await api().post('/api/ai/recommendations').send({ faceShape: 'oval', hairType: 'wavy', hairLength: 'short', vibe: 'classic' });
   assert.equal(q.status, 200);
 });
+
+test('no customer turned away: alternatives incl. express slot, all bookable', async () => {
+  const skin = (await api().get('/api/services')).body.services.find((s) => s.name === 'Skin Fade'); // 45 min
+  // Find a day + time T where Arjun is free for 45 min, then occupy T+30 so only a shorter (30 min) service fits at T
+  let date; let T;
+  for (let i = 3; i < 20 && !T; i++) {
+    const d = dayjs().tz('Asia/Kolkata').add(i, 'day').format('YYYY-MM-DD');
+    const slots = (await api().get(`/api/barbers/${barber.id}/availability`).query({ date: d, serviceIds: skin.id })).body.slots;
+    for (const s of slots.filter((x) => x.available)) {
+      const blocker = dayjs(s.start).add(30, 'minute').toISOString();
+      const r = await api().post('/api/appointments').send({ barberId: barber.id, serviceIds: [services.find((x) => x.name === 'Beard Trim & Shape').id], startAt: blocker,
+        guest: { name: 'Blocker Guest', email: 'blocker@example.com', phone: '+919820000777' } });
+      if (r.status === 201) { date = d; T = s.start; break; }
+    }
+  }
+  assert.ok(T, 'set-up: found a slot to squeeze');
+  const time = dayjs(T).tz('Asia/Kolkata').format('HH:mm');
+  // Full 45 min no longer fits at T with Arjun
+  const full = await api().post('/api/appointments').send({ barberId: barber.id, serviceIds: [skin.id], startAt: T, guest: { name: 'Full Fit', email: 'full@example.com', phone: '+919820000778' } });
+  assert.equal(full.status, 409);
+
+  const alt = await api().post('/api/appointments/alternatives').send({ serviceIds: [skin.id], date, time, barberId: barber.id });
+  assert.equal(alt.status, 200, JSON.stringify(alt.body));
+  assert.equal(alt.body.requestedAvailable, false);
+  assert.ok(alt.body.options.length >= 3, 'several options offered');
+  assert.ok(alt.body.message);
+  const express = alt.body.candidates.find((c) => c.type === 'express' && c.barberId === barber.id);
+  assert.ok(alt.body.options.some((o) => o.type === 'express' && o.barberId === barber.id), 'express with the chosen barber is among the offered options');
+  assert.ok(new Set(alt.body.options.map((o) => o.type)).size >= 2, 'a mix of option types');
+  assert.ok(express, 'express option with the preferred barber at the exact time');
+  assert.equal(express.durationMin, 30);
+  assert.equal(express.start, T);
+
+  // The express option really books — and ends before the blocker
+  const ex = await api().post('/api/appointments').send({ barberId: barber.id, serviceIds: [skin.id], startAt: T, expressMinutes: 30,
+    guest: { name: 'Express Guest', email: 'express@example.com', phone: '+919820000779' } });
+  assert.equal(ex.status, 201, JSON.stringify(ex.body));
+  assert.equal(dayjs(ex.body.appointment.end_at).diff(dayjs(T), 'minute'), 30);
+  assert.match(ex.body.appointment.notes, /Express service: 30 min/);
+  // Too short is refused
+  const tooShort = await api().post('/api/appointments').send({ barberId: barber.id, serviceIds: [skin.id], startAt: T, expressMinutes: 20,
+    guest: { name: 'Too Short', email: 'short@example.com', phone: '+919820000780' } });
+  assert.equal(tooShort.status, 400);
+
+  // Every other suggested option is a real, bookable slot
+  for (const o of alt.body.options.filter((x) => x.type !== 'express')) {
+    const r = await api().post('/api/appointments').send({ barberId: o.barberId, serviceIds: [skin.id], startAt: o.start,
+      guest: { name: 'Option Taker', email: `opt-${o.id}@example.com`, phone: '+919820000781' } });
+    assert.equal(r.status, 201, `${o.type} ${o.start}: ${JSON.stringify(r.body)}`);
+  }
+});
